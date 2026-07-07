@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeakPlanner - Vancouver Trail Guide & Planner</title>
+    <!-- Tailwind CSS with CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet Map CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        monokai: {
+                            bg: '#2d2a2e',      /* Soft charcoal */
+                            card: '#221f22',    /* Dark panel */
+                            deep: '#19181a',    /* Deeper shadow contrast */
+                            hover: '#3e3b3f',   /* Focused button / item */
+                            active: '#49464a',  /* Selected element background */
+                            text: '#fcfcfa',    /* Bright off-white */
+                            dim: '#939293',     /* Muted gray text */
+
+                            /* Accent colors */
+                            pink: '#ff6188',    /* Hard difficulty / alerts */
+                            green: '#a9dc76',   /* Easy difficulty / checklist ticks */
+                            yellow: '#ffd866',  /* Primary highlights / view stars / warnings */
+                            orange: '#fc9867',  /* Intermediate difficulty / distance */
+                            blue: '#78dce8',    /* Transit / Altitude / Weather icons */
+                            purple: '#ab9df2',  /* Pace / Ascent / Time metrics */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #2d2a2e;
+            color: #fcfcfa;
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Custom scrollbar layout for high-end feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #19181a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3e3b3f;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #ffd866;
+        }
+
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(34, 31, 34, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(147, 146, 147, 0.15);
+        }
+
+        /* Print Layout stylesheet optimization */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            .print-card {
+                border: 1px solid #ccc !important;
+                background: white !important;
+                color: black !important;
+                page-break-inside: avoid;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="h-full flex flex-col overflow-hidden">
+
+    <!-- Top Sleek Header -->
+    <header
+        class="bg-monokai-deep border-b border-monokai-hover px-6 py-4 flex items-center justify-between z-10 no-print">
+        <div class="flex items-center space-x-3">
+            <div
+                class="p-2 bg-gradient-to-tr from-monokai-pink to-monokai-yellow rounded-xl flex items-center justify-center shadow-lg">
+                <i data-lucide="mountain-snow" class="w-6 h-6 text-monokai-deep stroke-[2.5]"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight text-monokai-text flex items-center gap-2">
+                    PEAKPLANNER
+                </h1>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button onclick="window.print()"
+                class="flex items-center space-x-2 bg-monokai-hover hover:bg-monokai-active text-monokai-text px-4 py-2 rounded-lg border border-monokai-dim/10 text-sm transition font-medium">
+                <i data-lucide="printer" class="w-4 h-4 text-monokai-yellow"></i>
+                <span>Quick Print Plan</span>
+            </button>
+            <a href="https://www.vancouvertrails.com/" target="_blank" rel="noopener noreferrer"
+                class="text-xs text-monokai-dim hover:text-monokai-blue transition flex items-center gap-1 bg-monokai-deep px-3 py-2 rounded-lg border border-monokai-hover">
+                <span>Primary Resource: VancouverTrails.com</span>
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content Panel Area -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden no-print">
+
+        <!-- Left Sidebar: Filter, Search & Hike Directory -->
+        <section
+            class="w-full lg:w-[420px] bg-monokai-deep border-r border-monokai-hover flex flex-col overflow-hidden">
+            <!-- Search & Filtering UI Controls -->
+            <div class="p-4 border-b border-monokai-hover space-y-4">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <i data-lucide="search" class="w-5 h-5 text-monokai-dim"></i>
+                    </span>
+                    <input type="text" id="hike-search" placeholder="Search hikes (e.g., Joffre, Chief)..."
+                        class="w-full bg-monokai-bg text-monokai-text pl-10 pr-4 py-2.5 rounded-lg border border-monokai-hover focus:outline-none focus:ring-2 focus:ring-monokai-yellow text-sm transition">
+                </div>
+
+                <!-- Advanced Sorting dropdown -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-mono text-monokai-dim uppercase tracking-wider mb-1">Sort
+                            Trails By</label>
+                        <select id="hike-sort"
+                            class="w-full bg-monokai-bg text-monokai-text text-xs rounded-lg px-2.5 py-2 border border-monokai-hover focus:outline-none focus:ring-1 focus:ring-monokai-yellow">
+                            <option value="views-desc">★ View Rating (High to Low)</option>
+                            <option value="duration-asc">⏱ Duration (Shortest first)</option>
+                            <option value="duration-desc">⏱ Duration (Longest first)</option>
+                            <option value="distance-asc">🚗 Closest from Vancouver</option>
+                            <option value="difficulty-asc">🏔 Difficulty (Easy first)</option>
+                            <option value="difficulty-desc">🏔 Difficulty (Challenging first)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-mono text-monokai-dim uppercase tracking-wider mb-1">Filter
+                            Level</label>
+                        <div class="flex space-x-1" id="difficulty-filters">
+                            <button data-level="Easy"
+                                class="flex-1 py-2 rounded text-xs font-medium text-monokai-dim bg-monokai-bg hover:bg-monokai-hover border border-monokai-hover transition">Easy</button>
+                            <button data-level="Intermediate"
+                                class="flex-1 py-2 rounded text-xs font-medium text-monokai-dim bg-monokai-bg hover:bg-monokai-hover border border-monokai-hover transition">Inter</button>
+                            <button data-level="Difficult"
+                                class="flex-1 py-2 rounded text-xs font-medium text-monokai-dim bg-monokai-bg hover:bg-monokai-hover border border-monokai-hover transition">Diff</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scrollable Hike Card List -->
+            <div id="hike-list" class="flex-1 overflow-y-auto p-4 space-y-3">
+                <!-- Hike list cards will be rendered dynamically -->
+            </div>
+        </section>
+
+        <!-- Right Main: Active Hike Presentation, Maps & Planning Engine -->
+        <section id="planning-viewport" class="flex-1 flex flex-col overflow-y-auto bg-monokai-bg">
+            <!-- Empty state presentation -->
+            <div id="empty-view" class="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                <div class="relative mb-6">
+                    <div
+                        class="absolute -inset-1 rounded-full bg-gradient-to-r from-monokai-pink via-monokai-yellow to-monokai-blue blur opacity-20 animate-pulse">
+                    </div>
+                    <div class="relative bg-monokai-card p-6 rounded-full border border-monokai-hover">
+                        <i data-lucide="compass" class="w-16 h-16 text-monokai-yellow animate-spin"
+                            style="animation-duration: 12s;"></i>
+                    </div>
+                </div>
+                <h3 class="text-2xl font-bold text-monokai-text mb-2">Initialize Your Next Peak Adventure</h3>
+                <p class="text-monokai-dim max-w-md mx-auto text-sm leading-relaxed mb-6">
+                    Select any of the 11 premiere Vancouver area trails on the left sidebar to analyze terrain metrics,
+                    calculate detailed safety timelines, explore live mapping, and simulate customized seasonal weather
+                    reports.
+                </p>
+                <div
+                    class="grid grid-cols-2 md:grid-cols-4 gap-3 max-w-lg text-left text-xs font-mono text-monokai-dim">
+                    <div class="bg-monokai-card p-3 rounded border border-monokai-hover flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-monokai-green"></span>
+                        <span>Elevation Math</span>
+                    </div>
+                    <div class="bg-monokai-card p-3 rounded border border-monokai-hover flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-monokai-yellow"></span>
+                        <span>Safety Alerts</span>
+                    </div>
+                    <div class="bg-monokai-card p-3 rounded border border-monokai-hover flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-monokai-blue"></span>
+                        <span>Interactive Map</span>
+                    </div>
+                    <div class="bg-monokai-card p-3 rounded border border-monokai-hover flex items-center space-x-2">
+                        <span class="w-2 h-2 rounded-full bg-monokai-pink"></span>
+                        <span>Itinerary Sharing</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Hike presentation details -->
+            <div id="active-hike-panel" class="hidden">
+                <!-- Gorgeous Hero Cover with Image and Quick Stats Overlay -->
+                <div class="relative h-[280px] w-full overflow-hidden">
+                    <img id="hero-img" src="" alt="Hike Banner"
+                        class="w-full h-full object-cover brightness-[0.4] transition-all duration-700 scale-105">
+                    <div class="absolute inset-0 bg-gradient-to-t from-monokai-bg via-transparent to-transparent"></div>
+                    <div
+                        class="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                        <div>
+                            <span id="hero-region"
+                                class="text-xs font-mono tracking-widest text-monokai-yellow uppercase bg-monokai-deep/80 px-2.5 py-1 rounded border border-monokai-yellow/30"></span>
+                            <h2 id="hero-title"
+                                class="text-3xl md:text-4xl font-extrabold text-monokai-text mt-2 tracking-tight"></h2>
+                            <p class="text-sm text-monokai-dim flex items-center gap-2 mt-1">
+                                <span id="hero-stars" class="text-monokai-yellow flex items-center gap-1"></span>
+                                <span id="hero-rating-val"></span>
+                                <span class="text-monokai-hover">|</span>
+                                <span id="hero-best-season"></span>
+                            </p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="btn-view-photos"
+                                class="flex items-center space-x-2 bg-monokai-deep/80 backdrop-blur hover:bg-monokai-hover text-monokai-text border border-monokai-dim/20 px-3.5 py-2 rounded-lg text-xs transition">
+                                <i data-lucide="image" class="w-4 h-4 text-monokai-pink"></i>
+                                <span>Summit Photos</span>
+                            </button>
+                            <button id="btn-share-friends"
+                                class="flex items-center space-x-2 bg-monokai-deep/80 backdrop-blur hover:bg-monokai-hover text-monokai-text border border-monokai-dim/20 px-3.5 py-2 rounded-lg text-xs transition">
+                                <i data-lucide="copy" class="w-4 h-4 text-monokai-blue"></i>
+                                <span id="btn-share-text">Copy Invite</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Core Stats Grid -->
+                <div class="px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4 border-b border-monokai-hover">
+                    <div class="bg-monokai-card p-4 rounded-xl border border-monokai-hover flex items-center space-x-4">
+                        <div class="p-3 rounded-lg bg-monokai-pink/10 text-monokai-pink">
+                            <i data-lucide="activity" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-monokai-dim font-mono uppercase">Round-Trip Distance</span>
+                            <span id="stat-distance" class="text-lg font-bold text-monokai-text"></span>
+                        </div>
+                    </div>
+                    <div class="bg-monokai-card p-4 rounded-xl border border-monokai-hover flex items-center space-x-4">
+                        <div class="p-3 rounded-lg bg-monokai-orange/10 text-monokai-orange">
+                            <i data-lucide="timer" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-monokai-dim font-mono uppercase">Est. Trail Duration</span>
+                            <span id="stat-duration" class="text-lg font-bold text-monokai-text"></span>
+                        </div>
+                    </div>
+                    <div class="bg-monokai-card p-4 rounded-xl border border-monokai-hover flex items-center space-x-4">
+                        <div class="p-3 rounded-lg bg-monokai-blue/10 text-monokai-blue">
+                            <i data-lucide="chevrons-up" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-monokai-dim font-mono uppercase">Elevation Gain</span>
+                            <span id="stat-elevation" class="text-lg font-bold text-monokai-text"></span>
+                        </div>
+                    </div>
+                    <div class="bg-monokai-card p-4 rounded-xl border border-monokai-hover flex items-center space-x-4">
+                        <div class="p-3 rounded-lg bg-monokai-purple/10 text-monokai-purple">
+                            <i data-lucide="car" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-monokai-dim font-mono uppercase">Drive from Downtown</span>
+                            <span id="stat-drive" class="text-lg font-bold text-monokai-text"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabbed Layout Header -->
+                <div class="border-b border-monokai-hover px-6 flex space-x-6 text-sm font-semibold">
+                    <button id="tab-btn-overview"
+                        class="py-4 text-monokai-yellow border-b-2 border-monokai-yellow flex items-center gap-2 transition focus:outline-none">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                        <span>Route & Navigation</span>
+                    </button>
+                    <button id="tab-btn-planner"
+                        class="py-4 text-monokai-dim hover:text-monokai-text border-b-2 border-transparent flex items-center gap-2 transition focus:outline-none">
+                        <i data-lucide="calendar-range" class="w-4 h-4 text-monokai-purple"></i>
+                        <span>Planner & Weather Module</span>
+                    </button>
+                </div>
+
+                <!-- Tab Content: Overview & Maps -->
+                <div id="tab-content-overview" class="p-6 space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <!-- Left: Instructions and Technical description -->
+                        <div class="lg:col-span-7 space-y-4">
+                            <div>
+                                <h4 class="text-sm font-mono text-monokai-yellow uppercase mb-2">Trail Walkthrough &
+                                    Rules</h4>
+                                <p id="hike-description"
+                                    class="text-monokai-text/95 leading-relaxed text-sm bg-monokai-card p-4 rounded-xl border border-monokai-hover">
+                                </p>
+                            </div>
+
+                            <div class="bg-monokai-card p-4 rounded-xl border border-monokai-hover space-y-3">
+                                <div class="flex items-center space-x-2 text-monokai-orange">
+                                    <i data-lucide="info" class="w-4 h-4"></i>
+                                    <span class="text-xs font-mono uppercase">Parking Details & Gathering Spot</span>
+                                </div>
+                                <div class="space-y-2 text-sm leading-relaxed">
+                                    <p><strong class="text-monokai-text">Where to Park:</strong> <span id="hike-parking"
+                                            class="text-monokai-dim"></span></p>
+                                    <p><strong class="text-monokai-text">Suggested Meeting Point:</strong> <span
+                                            id="hike-meeting" class="text-monokai-dim"></span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Interactive Leaflet Map Panel -->
+                        <div class="lg:col-span-5 flex flex-col space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-mono text-monokai-dim uppercase">LIVE TRAILHEAD LOCATION
+                                    Map</span>
+                                <span id="gps-coords"
+                                    class="text-xs font-mono text-monokai-blue bg-monokai-deep px-2.5 py-1 rounded border border-monokai-hover"></span>
+                            </div>
+                            <div id="hike-map"
+                                class="h-[320px] rounded-xl border border-monokai-hover overflow-hidden shadow-inner z-0">
+                            </div>
+                            <span class="text-[10px] font-mono text-monokai-dim text-right leading-none block">Drag map
+                                to explore surrounding topography & roads</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Planner & Intelligent Weather Module -->
+                <div id="tab-content-planner" class="hidden p-6 space-y-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+                        <!-- Interactive Planner Controls (5 Columns) -->
+                        <div
+                            class="lg:col-span-5 bg-monokai-card p-5 rounded-2xl border border-monokai-hover space-y-5">
+                            <h4
+                                class="text-sm font-mono text-monokai-yellow uppercase tracking-wider border-b border-monokai-hover pb-2 flex items-center justify-between">
+                                <span>Adjust Trip Parameters</span>
+                                <i data-lucide="sliders" class="w-4 h-4 text-monokai-dim"></i>
+                            </h4>
+
+                            <!-- Date Select -->
+                            <div>
+                                <label
+                                    class="block text-xs font-mono text-monokai-dim uppercase mb-1.5 flex items-center justify-between">
+                                    <span>Target Date</span>
+                                    <span class="text-monokai-blue text-[10px]">(Trigger Weather Engine)</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="date" id="plan-date"
+                                        class="w-full bg-monokai-bg text-monokai-text rounded-lg border border-monokai-hover px-3 py-2 text-sm focus:outline-none focus:border-monokai-yellow">
+                                </div>
+                            </div>
+
+                            <!-- Departure Hour Slider -->
+                            <div>
+                                <div class="flex justify-between text-xs font-mono text-monokai-dim mb-1">
+                                    <span>TRAILHEAD START TIME</span>
+                                    <span id="val-departure" class="text-monokai-yellow font-bold">08:00 AM</span>
+                                </div>
+                                <input type="range" id="plan-departure" min="5" max="20" step="0.5" value="8"
+                                    class="w-full h-1 bg-monokai-hover rounded-lg appearance-none cursor-pointer accent-monokai-yellow">
+                                <div class="flex justify-between text-[10px] text-monokai-dim mt-1 font-mono">
+                                    <span>5:00 AM</span>
+                                    <span>12:00 PM</span>
+                                    <span>8:00 PM</span>
+                                </div>
+                            </div>
+
+                            <!-- Group Linger Time at Peak -->
+                            <div>
+                                <div class="flex justify-between text-xs font-mono text-monokai-dim mb-1">
+                                    <span>SUMMIT LINGER DURATION</span>
+                                    <span id="val-linger" class="text-monokai-purple font-bold">45 min</span>
+                                </div>
+                                <input type="range" id="plan-linger" min="15" max="180" step="15" value="45"
+                                    class="w-full h-1 bg-monokai-hover rounded-lg appearance-none cursor-pointer accent-monokai-purple">
+                                <div class="flex justify-between text-[10px] text-monokai-dim mt-1 font-mono">
+                                    <span>15 mins</span>
+                                    <span>1.5 Hours</span>
+                                    <span>3 Hours</span>
+                                </div>
+                            </div>
+
+                            <!-- Hike Speed Ratio -->
+                            <div>
+                                <label class="block text-xs font-mono text-monokai-dim uppercase mb-1.5">Group Travel
+                                    Pace</label>
+                                <div class="grid grid-cols-3 gap-2 text-xs" id="plan-pace-selector">
+                                    <button data-pace="1.3"
+                                        class="p-2.5 rounded-lg border border-monokai-hover bg-monokai-bg hover:bg-monokai-hover transition font-medium flex flex-col items-center">
+                                        <span class="text-monokai-text">Leisurely</span>
+                                        <span class="text-[10px] text-monokai-dim">130% Time</span>
+                                    </button>
+                                    <button data-pace="1.0"
+                                        class="p-2.5 rounded-lg border border-monokai-yellow bg-monokai-active transition font-medium flex flex-col items-center">
+                                        <span class="text-monokai-yellow">Standard</span>
+                                        <span class="text-[10px] text-monokai-dim">100% Time</span>
+                                    </button>
+                                    <button data-pace="0.75"
+                                        class="p-2.5 rounded-lg border border-monokai-hover bg-monokai-bg hover:bg-monokai-hover transition font-medium flex flex-col items-center">
+                                        <span class="text-monokai-green">Speedy</span>
+                                        <span class="text-[10px] text-monokai-dim">75% Time</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Simulated Elevation Weather & Timeline Schedule -->
+                        <div class="lg:col-span-7 space-y-6">
+
+                            <!-- Dynamic Weather & Alpine Safety Condition Block -->
+                            <div class="bg-monokai-card p-5 rounded-2xl border border-monokai-hover">
+                                <h4 class="text-xs font-mono text-monokai-dim uppercase tracking-wider mb-3">DYNAMIC
+                                    Weather Analysis (Altitude-Corrected)</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                    <div
+                                        class="md:col-span-4 flex items-center space-x-3 border-r border-monokai-hover/50 pr-4">
+                                        <div id="weather-icon-bg"
+                                            class="p-4 rounded-xl flex items-center justify-center">
+                                            <i id="weather-icon" data-lucide="sun" class="w-10 h-10"></i>
+                                        </div>
+                                        <div>
+                                            <span id="weather-temp"
+                                                class="text-3xl font-extrabold text-monokai-text"></span>
+                                            <span id="weather-label"
+                                                class="block text-xs font-mono text-monokai-dim uppercase"></span>
+                                        </div>
+                                    </div>
+                                    <div class="md:col-span-8 space-y-1.5">
+                                        <p class="text-xs text-monokai-dim flex justify-between">
+                                            <span>Est. Peak Temp Drop (vs City):</span>
+                                            <span id="weather-lapse"
+                                                class="font-mono text-monokai-pink font-semibold"></span>
+                                        </p>
+                                        <p class="text-xs text-monokai-dim flex justify-between">
+                                            <span>Simulated Altitude Wind:</span>
+                                            <span id="weather-wind"
+                                                class="font-mono text-monokai-blue font-semibold"></span>
+                                        </p>
+                                        <div id="weather-alert" class="text-xs p-2.5 rounded-lg mt-2 font-medium"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Real-Time Calculated Schedule / Vertical Progress Timeline -->
+                            <div class="bg-monokai-card p-5 rounded-2xl border border-monokai-hover space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="text-xs font-mono text-monokai-dim uppercase tracking-wider">Dynamic
+                                        Schedule Timeline</h4>
+                                    <!-- Sunset alert pill -->
+                                    <div id="sunset-alert-pill"
+                                        class="hidden items-center space-x-1.5 bg-monokai-pink/10 border border-monokai-pink/30 px-3 py-1 rounded-full animate-pulse">
+                                        <span class="w-2 h-2 rounded-full bg-monokai-pink"></span>
+                                        <span
+                                            class="text-[10px] font-mono text-monokai-pink uppercase font-semibold">Sunset
+                                            Warning</span>
+                                    </div>
+                                </div>
+
+                                <!-- Vertical Visual Timeline Graphic -->
+                                <div
+                                    class="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-monokai-hover">
+
+                                    <!-- Step 1: Trailhead start -->
+                                    <div class="flex items-start space-x-4 relative">
+                                        <div
+                                            class="w-7 h-7 rounded-full bg-monokai-blue flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                                            <i data-lucide="parking-circle"
+                                                class="w-4 h-4 text-monokai-deep stroke-[2.5]"></i>
+                                        </div>
+                                        <div
+                                            class="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                                            <div>
+                                                <span class="text-xs font-semibold text-monokai-text">Depart Parking Lot
+                                                    & Start Hike</span>
+                                                <span class="block text-[10px] text-monokai-dim font-mono">Ensure all
+                                                    gear, spikes and water are on-hand</span>
+                                            </div>
+                                            <span id="time-depart"
+                                                class="text-sm font-mono text-monokai-blue font-bold shrink-0 pl-2">08:00
+                                                AM</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 2: Reach Peak -->
+                                    <div class="flex items-start space-x-4 relative">
+                                        <div
+                                            class="w-7 h-7 rounded-full bg-monokai-pink flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                                            <i data-lucide="mountain"
+                                                class="w-4 h-4 text-monokai-deep stroke-[2.5]"></i>
+                                        </div>
+                                        <div
+                                            class="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                                            <div>
+                                                <span class="text-xs font-semibold text-monokai-text">Arrive at Peak /
+                                                    Summit Viewpoint</span>
+                                                <span id="lbl-ascent-duration"
+                                                    class="block text-[10px] text-monokai-dim font-mono"></span>
+                                            </div>
+                                            <span id="time-summit"
+                                                class="text-sm font-mono text-monokai-pink font-bold shrink-0 pl-2">10:15
+                                                AM</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 3: Descend Start -->
+                                    <div class="flex items-start space-x-4 relative">
+                                        <div
+                                            class="w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                                            <i data-lucide="clock" class="w-4 h-4 text-monokai-deep stroke-[2.5]"></i>
+                                        </div>
+                                        <div
+                                            class="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                                            <div>
+                                                <span class="text-xs font-semibold text-monokai-text">Begin Descent
+                                                    Downhill</span>
+                                                <span id="lbl-linger-duration"
+                                                    class="block text-[10px] text-monokai-dim font-mono">Linger
+                                                    time</span>
+                                            </div>
+                                            <span id="time-descent"
+                                                class="text-sm font-mono text-monokai-purple font-bold shrink-0 pl-2">11:00
+                                                AM</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Step 4: Back to base -->
+                                    <div class="flex items-start space-x-4 relative">
+                                        <div
+                                            class="w-7 h-7 rounded-full bg-monokai-green flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                                            <i data-lucide="circle-check"
+                                                class="w-4 h-4 text-monokai-deep stroke-[2.5]"></i>
+                                        </div>
+                                        <div
+                                            class="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                                            <div>
+                                                <span class="text-xs font-semibold text-monokai-text">Arrive Back at
+                                                    Trailhead</span>
+                                                <span id="lbl-descent-duration"
+                                                    class="block text-[10px] text-monokai-dim font-mono"></span>
+                                            </div>
+                                            <span id="time-return"
+                                                class="text-sm font-mono text-monokai-green font-bold shrink-0 pl-2">01:00
+                                                PM</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Dynamic daylight/headlamp alert warning -->
+                                <div id="daylight-warning-panel"
+                                    class="hidden bg-monokai-pink/15 border border-monokai-pink/30 p-3 rounded-xl flex items-start space-x-3">
+                                    <i data-lucide="alert-triangle"
+                                        class="w-5 h-5 text-monokai-pink shrink-0 mt-0.5"></i>
+                                    <div class="text-xs leading-relaxed">
+                                        <strong class="text-monokai-pink">CAUTION: Return schedule pushes past available
+                                            daylight.</strong>
+                                        <span class="block text-monokai-dim">The estimated Vancouver sunset for your
+                                            selected date is <strong id="val-sunset"
+                                                class="text-monokai-text"></strong>. Ensure every group member brings a
+                                            reliable headlamp, backup batteries, and thermal survival equipment.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- PRINT ONLY CONTENT (Hidden on web UI, perfectly styled for physical page print) -->
+    <section class="print-only p-8 text-black bg-white max-w-4xl mx-auto space-y-6">
+        <!-- Print Header -->
+        <div class="border-b-2 border-black pb-4 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-black uppercase tracking-tight">Hike Safety & Route Plan</h1>
+                <p class="text-sm text-gray-600">PeakPlanner Vancouver Backcountry Guide</p>
+            </div>
+            <div class="text-right font-mono text-xs">
+                <p>Plan Created: <span id="print-created-date"></span></p>
+                <p>Status: Registered with Emergency Contact</p>
+            </div>
+        </div>
+
+        <!-- Print Core Stats -->
+        <div class="grid grid-cols-4 gap-4 border border-black p-4 rounded-xl bg-gray-50">
+            <div>
+                <span class="block text-[10px] uppercase font-bold text-gray-500">Hike Trail</span>
+                <span id="print-name" class="text-lg font-bold"></span>
+            </div>
+            <div>
+                <span class="block text-[10px] uppercase font-bold text-gray-500">Target Date</span>
+                <span id="print-date" class="text-lg font-bold"></span>
+            </div>
+            <div>
+                <span class="block text-[10px] uppercase font-bold text-gray-500">Est. Round-Trip</span>
+                <span id="print-dist" class="text-lg font-bold"></span>
+            </div>
+            <div>
+                <span class="block text-[10px] uppercase font-bold text-gray-500">Est. Duration</span>
+                <span id="print-duration" class="text-lg font-bold"></span>
+            </div>
+        </div>
+
+        <!-- Timeline & Gathering details -->
+        <div class="grid grid-cols-2 gap-6">
+            <div class="border border-black p-4 rounded-xl space-y-3">
+                <h3 class="text-sm font-bold uppercase border-b pb-1">Calculated Timeline</h3>
+                <table class="w-full text-xs font-mono">
+                    <tr class="border-b">
+                        <td class="py-1.5 font-bold">Departure Time</td>
+                        <td id="print-time-depart" class="text-right"></td>
+                    </tr>
+                    <tr class="border-b">
+                        <td class="py-1.5 font-bold">Summit Arrival</td>
+                        <td id="print-time-summit" class="text-right"></td>
+                    </tr>
+                    <tr class="border-b">
+                        <td class="py-1.5 font-bold">Begin Descent</td>
+                        <td id="print-time-descent" class="text-right"></td>
+                    </tr>
+                    <tr class="border-b">
+                        <td class="py-1.5 font-bold">Trailhead Return</td>
+                        <td id="print-time-return" class="text-right"></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="border border-black p-4 rounded-xl space-y-3">
+                <h3 class="text-sm font-bold uppercase border-b pb-1">Navigation & Logistics</h3>
+                <p class="text-xs"><strong class="uppercase">Parking:</strong> <span id="print-parking"></span></p>
+                <p class="text-xs"><strong class="uppercase">Gathering point:</strong> <span id="print-meeting"></span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Instructions Walkthrough -->
+        <div class="border border-black p-4 rounded-xl space-y-2">
+            <h3 class="text-sm font-bold uppercase border-b pb-1">Trail Instructions</h3>
+            <p id="print-instructions" class="text-xs leading-relaxed text-gray-700"></p>
+        </div>
+
+        <!-- 10 essentials checklist for physical check -->
+        <div class="grid grid-cols-2 gap-6">
+            <div class="border border-black p-4 rounded-xl space-y-2">
+                <h3 class="text-sm font-bold uppercase border-b pb-1">The 10 Hiking Essentials</h3>
+                <ul class="text-xs space-y-1 font-mono">
+                    <li>[ ] 1. Navigation (Offline maps/GPS)</li>
+                    <li>[ ] 2. Headlamp / Flashlight (Crucial)</li>
+                    <li>[ ] 3. Sun protection (Sunglasses/Sunscreen)</li>
+                    <li>[ ] 4. First Aid Kit</li>
+                    <li>[ ] 5. Multi-tool / Repair supplies</li>
+                    <li>[ ] 6. Fire starter matches / lighter</li>
+                    <li>[ ] 7. Shelter (Emergency space blanket)</li>
+                    <li>[ ] 8. Extra nutrition / snacks</li>
+                    <li>[ ] 9. Extra hydration / water filter</li>
+                    <li>[ ] 10. Thermal layer / shell clothing</li>
+                </ul>
+            </div>
+
+            <!-- Emergency Safety protocols -->
+            <div class="border border-black p-4 rounded-xl bg-gray-50 space-y-2">
+                <h3 class="text-sm font-bold uppercase border-b pb-1 text-red-700">BC Backcountry Safety Protocols</h3>
+                <p class="text-[11px] leading-relaxed text-gray-800">
+                    If any group member becomes separated, disoriented, or injured:
+                </p>
+                <ul class="list-disc pl-4 text-[10px] space-y-1 text-gray-700 leading-relaxed">
+                    <li><strong>STOP and stay put.</strong> Do not travel downhill off-trail or down creek gullies, as
+                        they often terminate in impassable cliffs.</li>
+                    <li>Seek nearby shelter. Conserve body heat by sitting on your backpack to insulate from damp
+                        ground.</li>
+                    <li>If you have cell reception, immediately dial 911 to activate North Shore Rescue.</li>
+                    <li>Blow whistles in groups of three bursts (the universal emergency signal) to guide rescuers.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Hand written notes area -->
+        <div class="border border-black p-4 rounded-xl space-y-4">
+            <h3 class="text-sm font-bold uppercase border-b pb-1">Group Details & Sign-Out Notes</h3>
+            <div class="grid grid-cols-2 gap-4 text-xs font-mono">
+                <div>
+                    <p class="mb-4">Group Size: _______________________</p>
+                    <p>Emergency Contact: __________________</p>
+                </div>
+                <div>
+                    <p class="mb-4">Hiker Signature: __________________</p>
+                    <p>Emergency Phone: ___________________</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center text-[10px] text-gray-500 font-mono">
+            Generated via PeakPlanner. Always leave a copy of this sheet on your car dashboard and share digitally with
+            an emergency contact.
+        </div>
+    </section>
+
+    <script>
+        // Immersive Hike Database with full factual stats and details
+        const HIKE_DATA = [
+            {
+                id: "hollyburn",
+                name: "Hollyburn Mountain",
+                region: "Cypress Mountain Area",
+                distance: "7 km",
+                duration: 3.5,
+                difficulty: "Intermediate",
+                difficultyLevel: 3.0,
+                elevation: 450,
+                distFromVan: 28,
+                views: 4.2,
+                season: "July - October (Winter Snowshoe too)",
+                parking: "Cypress Mountain Nordic Area Parking Lot. Free in summer season.",
+                meetingPoint: "Main BC Parks Mapboard near cross-country ticketing cabin",
+                instructions: "From the Cypress Nordic parking, follow the main path uphill directly alongside the power lines. After a steady 15-minute climb, veer left near the skiers warming hut and follow the orange markers towards Hollyburn Mountain. Proceed through meadows, keeping a keen eye out for wild berries and bears. The final 20 minutes is a rocky climb up the summit ridge, rewarding hikers with panoramic vistas of Vancouver, Burrard Inlet, and the Howe Sound.",
+                img: "https://images.unsplash.com/photo-1548777123-e216912df7d8?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.3675, -123.1585]
+            },
+            {
+                id: "dog-mountain",
+                name: "Dog Mountain Trail",
+                region: "Mount Seymour Provincial Park",
+                distance: "5 km",
+                duration: 2.0,
+                difficulty: "Easy",
+                difficultyLevel: 1.5,
+                elevation: 34,
+                distFromVan: 24,
+                views: 4.5,
+                season: "June - October (Winter Snowshoe too)",
+                parking: "Mount Seymour Main Ski Area lot. Free summer parking.",
+                meetingPoint: "BC Parks information kiosk at northwest corner of parking lot",
+                instructions: "Start at the NW end of Seymour parking lot. Head past the BC Parks mapboard and veer left into the forest canopy. The trail has minimal net elevation, but is highly technical with slippery exposed tree roots and mud pools. Cross First Lake bridge, then stay straight along the route to Dog Mountain. Step cautiously onto the rocky summit bluff to witness one of the most stunning, open-air views of downtown Vancouver, Stanley Park, and the Lions Gate Bridge.",
+                img: "https://images.unsplash.com/photo-1518098268026-4e43a1a009de?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.3676, -122.9491]
+            },
+            {
+                id: "joffre-lakes",
+                name: "Joffre Lakes",
+                region: "Pemberton / Lillooet Road",
+                distance: "10 km",
+                duration: 4.5,
+                difficulty: "Intermediate",
+                difficultyLevel: 3.5,
+                elevation: 370,
+                distFromVan: 182,
+                views: 5.0,
+                season: "June - September (Day-Use Pass Required)",
+                parking: "Joffre Lakes Provincial Park main/overflow lots off Duffey Lake Road.",
+                meetingPoint: "Information mapboard at lower parking lot entrance",
+                instructions: "The hike starts off with a quick 5-minute flat walk to the breathtaking Lower Joffre Lake. Return to the junction and begin a long, steady climb up through old-growth forests. Cross the scenic creek, pass Middle Joffre Lake, and continue near Holloway Falls. The final rooty climb leads to Upper Joffre Lake, situated beneath the immense, dramatic Matier Glacier. Day-use passes are strictly enforced during peak season.",
+                img: "https://images.unsplash.com/photo-1549880181-56a44cf8a4a1?auto=format&fit=crop&w=1200&q=80",
+                coords: [50.3695, -122.4987]
+            },
+            {
+                id: "garibaldi-lake",
+                name: "Garibaldi Lake",
+                region: "Squamish / Whistler Highway",
+                distance: "18 km",
+                duration: 6.0,
+                difficulty: "Difficult",
+                difficultyLevel: 4.0,
+                elevation: 820,
+                distFromVan: 98,
+                views: 5.0,
+                season: "July - October (Day-Use Pass Required)",
+                parking: "Rubble Creek Parking Lot (Fills up extremely early).",
+                meetingPoint: "Wooden steps at trailhead information kiosk",
+                instructions: "Climb the wide wooden steps to start a relentless, gradual 6km switchback grind through deep Douglas Fir forests. At the 6km junction, you can go left to detour through Taylor Meadows (highly recommended in late summer for subalpine wildflowers) or go right directly toward the lakes. Follow the downhill path to the glacier-fed turquoise waters of Garibaldi Lake, surrounded by spectacular active volcano peaks and glaciers.",
+                img: "https://images.unsplash.com/photo-1627309302198-09a50ae1b209?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.9575, -123.1192]
+            },
+            {
+                id: "stawamus-chief",
+                name: "Stawamus Chief Peaks",
+                region: "Squamish Area",
+                distance: "7 km",
+                duration: 5.0,
+                difficulty: "Difficult",
+                difficultyLevel: 4.5,
+                elevation: 600,
+                distFromVan: 62,
+                views: 4.9,
+                season: "March - November",
+                parking: "Stawamus Chief Provincial Park parking lot or Shannon Falls overpass lot.",
+                meetingPoint: "Information mapboard next to Chief campground / outhouses",
+                instructions: "The Chief doesn't waste time - it starts with a brutal set of wooden stairs. Climb steeply to the first main junction. For First Peak, veer left, scaling metal ladders and using thick chains to scramble up giant granite domes. For Second and Third Peaks, follow the right branch, ascending through narrow crevices and stepping across the deep North Gully gap. Watch your footing carefully; granite is slippery when wet.",
+                img: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.6782, -123.1360]
+            },
+            {
+                id: "quarry-rock",
+                name: "Quarry Rock Lookout",
+                region: "North Vancouver / Deep Cove",
+                distance: "3.8 km",
+                duration: 1.5,
+                difficulty: "Easy",
+                difficultyLevel: 1.0,
+                elevation: 100,
+                distFromVan: 20,
+                views: 4.4,
+                season: "Year-Round",
+                parking: "Deep Cove park area / street parking. Heavily restricted on sunny weekends.",
+                meetingPoint: "Baden Powell Trailhead signpost on Panorama Drive",
+                instructions: "Ascend the initial wooden steps off Panorama Drive. Follow the Easternmost section of the Baden Powell Trail. This is a classic temperate rainforest hike, navigating over tiny trickling creeks and major wooden footbridges. After some short stair climbs, veer right to step onto the massive solid granite outcropping of Quarry Rock. Enjoy beautiful views of Indian Arm and Belcarra across the water.",
+                img: "https://images.unsplash.com/photo-1516690561799-46d8f74f9abf?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.3283, -122.9495]
+            },
+            {
+                id: "seymour-pump",
+                name: "Seymour Pump Peaks",
+                region: "Mount Seymour Provincial Park",
+                distance: "7 km",
+                duration: 3.5,
+                difficulty: "Intermediate",
+                difficultyLevel: 3.0,
+                elevation: 474,
+                distFromVan: 24,
+                views: 4.7,
+                season: "June - October (Winter Snowshoe too)",
+                parking: "Mount Seymour Ski Area main parking lot (north tip).",
+                meetingPoint: "BC Parks board next to Mystery Peak Express chairlift",
+                instructions: "Follow the ski run access road uphill, past the Dog Mountain trailhead. The path climbs steadily through subalpine meadows to Brockton Point, which offers great initial views. Continue following the trail along the ridge, stepping down into a small depression before starting a steep, rocky, hands-on climb to the peak of Pump Peak (Seymour's First Peak).",
+                img: "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.3676, -122.9491]
+            },
+            {
+                id: "tunnel-bluffs",
+                name: "Tunnel Bluffs",
+                region: "Lions Bay Area",
+                distance: "11.5 km",
+                duration: 4.0,
+                difficulty: "Intermediate",
+                difficultyLevel: 3.0,
+                elevation: 470,
+                distFromVan: 42,
+                views: 4.8,
+                season: "March - November",
+                parking: "Sunset Trailhead Pay Parking Lot in Lions Bay (Only 15 spots. Overflow at elementary).",
+                meetingPoint: "Yellow gate at the very end of Sunset Drive",
+                instructions: "Pass the yellow gate and begin a relentless, steep 2km climb up the logging road (6 switchbacks). At the Brunswick junction, keep right past the water station. Cross the Magnesia Creek bridge, and immediately look for a trail splitting to the left marked 'Tunnel Bluffs'. From here, the route turns flat and easy as you walk an old logging railway path. Cross two large log bridges before stepping onto the cliffs.",
+                img: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.4710, -123.2348]
+            },
+            {
+                id: "eagle-bluffs",
+                name: "Eagle Bluffs via Black Mountain",
+                region: "Cypress Mountain Area",
+                distance: "9 km",
+                duration: 4.0,
+                difficulty: "Intermediate",
+                difficultyLevel: 3.5,
+                elevation: 350,
+                distFromVan: 28,
+                views: 4.8,
+                season: "July - October (Winter Snowshoe too)",
+                parking: "Cypress Mountain Downhill Ski Lodge main lot. Free summer parking.",
+                meetingPoint: "Large wooden trail map board to the left of Cypress Creek Lodge",
+                instructions: "Walk to the right of the Eagle Express chairlift and join the Baden Powell trail. Climb steeply through forest switchbacks, eventually passing adjacent to downhill ski runs. Reach Cabin Lake (perfect for a summer dip). Head south past Owen Lake, taking the right fork toward Eagle Bluffs. Navigate a few minor boulder fields before arriving at the open, spectacular rocky bluffs.",
+                img: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.3959, -123.2039]
+            },
+            {
+                id: "mount-strachan",
+                name: "Mount Strachan",
+                region: "Cypress Mountain Area",
+                distance: "10.5 km",
+                duration: 5.5,
+                difficulty: "Difficult",
+                difficultyLevel: 4.5,
+                elevation: 550,
+                distFromVan: 28,
+                views: 4.7,
+                season: "July - October",
+                parking: "Cypress Mountain Downhill Ski Lodge parking lot.",
+                meetingPoint: "Information boards next to the Yew Lake barrier-free trailhead",
+                instructions: "Follow the Yew Lake trail, connecting to the Howe Sound Crest Trail. Turn right into Strachan Meadows to begin a steep, hands-on rock scramble up Christmas Gully to the North Summit. Traverse the ridge to the South Summit. On descent, take the Old Strachan trail to explore the historical Royal Canadian Navy T-33 Jet plane crash site from 1963.",
+                img: "https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.3959, -123.2039]
+            },
+            {
+                id: "saint-marks",
+                name: "Saint Mark's Summit",
+                region: "Cypress Mountain Area",
+                distance: "11 km",
+                duration: 4.5,
+                difficulty: "Difficult",
+                difficultyLevel: 4.0,
+                elevation: 460,
+                distFromVan: 28,
+                views: 4.9,
+                season: "July - October",
+                parking: "Cypress Mountain Downhill Ski Lodge parking lot.",
+                meetingPoint: "Olympic Rings display in front of Cypress Creek Lodge",
+                instructions: "Find the northernmost trailhead near the Lion's Express chairlift. Follow the Howe Sound Crest Trail. The first 3km is a wide, comfortable gravel path. After crossing Montizambert Creek, the trail turns steep, technical, muddy, and rooty. Slog up the root steps to emerge onto the sheer rock edge of Saint Mark's Summit. Enjoy outstanding views of Howe Sound, Bowyer, Bowen, and Gambier Islands.",
+                img: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80",
+                coords: [49.3959, -123.2039]
+            }
+        ];
+    </script>
+
+    <script>
+        // Core Web Application State
+        let activeHike = null;
+        let searchQuery = "";
+        let activeSort = "views-desc";
+        let activeDifficultyFilter = [];
+        let planPace = 1.0; // standard
+
+        // Simulated Vancouver Sunset Times by Month (0 = Jan, 11 = Dec)
+        const SUNSET_DATABASE = [
+            "16:45", "15:30", "19:15", "20:00", "20:45", "21:15",
+            "21:00", "20:15", "19:15", "18:15", "16:45", "16:15"
+        ];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set current date to target input as default
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('plan-date').value = today;
+
+            // Initialize Lucide Icons
+            lucide.createIcons();
+
+            // Set event listeners for search and filters
+            document.getElementById('hike-search').addEventListener('input', handleSearch);
+            document.getElementById('hike-sort').addEventListener('change', handleSort);
+
+            // Difficulty filters click events
+            document.querySelectorAll('#difficulty-filters button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const level = e.currentTarget.getAttribute('data-level');
+                    if (activeDifficultyFilter.includes(level)) {
+                        activeDifficultyFilter = activeDifficultyFilter.filter(item => item !== level);
+                        e.currentTarget.classList.remove('border-monokai-yellow', 'text-monokai-yellow', 'bg-monokai-active');
+                    } else {
+                        activeDifficultyFilter.push(level);
+                        e.currentTarget.classList.add('border-monokai-yellow', 'text-monokai-yellow', 'bg-monokai-active');
+                    }
+                    renderHikeList();
+                });
+            });
+
+            // Tab navigation controls
+            document.getElementById('tab-btn-overview').addEventListener('click', () => switchTab('overview'));
+            document.getElementById('tab-btn-planner').addEventListener('click', () => switchTab('planner'));
+
+            // Live Planner controls
+            document.getElementById('plan-departure').addEventListener('input', calculateTimeline);
+            document.getElementById('plan-linger').addEventListener('input', calculateTimeline);
+            document.getElementById('plan-date').addEventListener('change', calculateTimeline);
+
+            // Pace buttons click handling
+            document.querySelectorAll('#plan-pace-selector button').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    document.querySelectorAll('#plan-pace-selector button').forEach(b => {
+                        b.classList.remove('border-monokai-yellow', 'bg-monokai-active');
+                        b.classList.add('border-monokai-hover', 'bg-monokai-bg');
+                    });
+                    e.currentTarget.classList.add('border-monokai-yellow', 'bg-monokai-active');
+                    planPace = parseFloat(e.currentTarget.getAttribute('data-pace'));
+                    calculateTimeline();
+                });
+            });
+
+            // Open actual photos link event
+            document.getElementById('btn-view-photos').addEventListener('click', () => {
+                if (activeHike) {
+                    const query = encodeURIComponent(`${activeHike.name} summit hike vancouver views`);
+                    window.open(`https://www.google.com/search?tbm=isch&q=${query}`, '_blank');
+                }
+            });
+
+            // Print integration hook
+            window.onbeforeprint = syncPrintData;
+
+            // Clipboard Share copy implementation
+            document.getElementById('btn-share-friends').addEventListener('click', copyItineraryToClipboard);
+
+            // Populate the initial list
+            renderHikeList();
+        });
+
+        // Render search & filter matching results
+        function renderHikeList() {
+            const listContainer = document.getElementById('hike-list');
+            listContainer.innerHTML = "";
+
+            // Filtering
+            let filtered = HIKE_DATA.filter(h => {
+                const matchesSearch = h.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    h.region.toLowerCase().includes(searchQuery.toLowerCase());
+                const matchesDiff = activeDifficultyFilter.length === 0 || activeDifficultyFilter.includes(h.difficulty);
+                return matchesSearch && matchesDiff;
+            });
+
+            // Sorting
+            filtered.sort((a, b) => {
+                if (activeSort === "views-desc") return b.views - a.views;
+                if (activeSort === "duration-asc") return a.duration - b.duration;
+                if (activeSort === "duration-desc") return b.duration - a.duration;
+                if (activeSort === "distance-asc") return a.distFromVan - b.distFromVan;
+                if (activeSort === "difficulty-asc") return a.difficultyLevel - b.difficultyLevel;
+                if (activeSort === "difficulty-desc") return b.difficultyLevel - a.difficultyLevel;
+                return 0;
+            });
+
+            // Build DOM cards
+            filtered.forEach(hike => {
+                const isActive = activeHike && activeHike.id === hike.id;
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-xl border transition cursor-pointer flex space-x-3 group ${isActive ? 'bg-monokai-active border-monokai-yellow text-monokai-text' : 'bg-monokai-card border-monokai-hover hover:bg-monokai-hover text-monokai-dim hover:text-monokai-text'}`;
+
+                // Color mapping for tags
+                let diffColor = "bg-monokai-green text-monokai-deep";
+                if (hike.difficulty === "Intermediate") diffColor = "bg-monokai-orange text-monokai-deep";
+                if (hike.difficulty === "Difficult") diffColor = "bg-monokai-pink text-monokai-deep";
+
+                card.innerHTML = `
+                    <div class="w-16 h-16 rounded-lg overflow-hidden shrink-0 bg-monokai-bg relative">
+                        <img src="${hike.img}" alt="${hike.name}" class="w-full h-full object-cover group-hover:scale-110 transition duration-500">
+                    </div>
+                    <div class="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                        <div class="flex items-start justify-between">
+                            <h4 class="font-bold text-sm tracking-tight truncate text-monokai-text">${hike.name}</h4>
+                            <span class="text-xs font-mono font-bold text-monokai-yellow flex items-center gap-0.5 shrink-0 pl-1">
+                                <i data-lucide="star" class="w-3.5 h-3.5 fill-monokai-yellow stroke-none"></i>
+                                <span>${hike.views.toFixed(1)}</span>
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-monokai-dim truncate uppercase font-mono">${hike.region}</p>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded ${diffColor} font-bold">${hike.difficulty}</span>
+                            <span class="text-[10px] font-mono text-monokai-orange flex items-center gap-0.5">
+                                <i data-lucide="map-pin" class="w-3 h-3"></i>
+                                <span>${hike.distFromVan}km</span>
+                            </span>
+                            <span class="text-[10px] font-mono text-monokai-purple flex items-center gap-0.5">
+                                <i data-lucide="timer" class="w-3 h-3"></i>
+                                <span>${hike.duration}h</span>
+                            </span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => selectHike(hike));
+                listContainer.appendChild(card);
+            });
+
+            // Recreate icons in list cards
+            lucide.createIcons();
+        }
+
+        function handleSearch(e) {
+            searchQuery = e.target.value;
+            renderHikeList();
+        }
+
+        function handleSort(e) {
+            activeSort = e.target.value;
+            renderHikeList();
+        }
+
+        function switchTab(tab) {
+            const btnOverview = document.getElementById('tab-btn-overview');
+            const btnPlanner = document.getElementById('tab-btn-planner');
+            const contentOverview = document.getElementById('tab-content-overview');
+            const contentPlanner = document.getElementById('tab-content-planner');
+
+            if (tab === 'overview') {
+                btnOverview.className = "py-4 text-monokai-yellow border-b-2 border-monokai-yellow flex items-center gap-2 transition focus:outline-none";
+                btnPlanner.className = "py-4 text-monokai-dim hover:text-monokai-text border-b-2 border-transparent flex items-center gap-2 transition focus:outline-none";
+                contentOverview.classList.remove('hidden');
+                contentPlanner.classList.add('hidden');
+                // Ensure leaflet layout recalibrates
+                if (map) setTimeout(() => map.invalidateSize(), 150);
+            } else {
+                btnPlanner.className = "py-4 text-monokai-yellow border-b-2 border-monokai-yellow flex items-center gap-2 transition focus:outline-none";
+                btnOverview.className = "py-4 text-monokai-dim hover:text-monokai-text border-b-2 border-transparent flex items-center gap-2 transition focus:outline-none";
+                contentPlanner.classList.remove('hidden');
+                contentOverview.classList.add('hidden');
+            }
+        }
+
+        function selectHike(hike) {
+            activeHike = hike;
+
+            // Swap visible frames
+            document.getElementById('empty-view').classList.add('hidden');
+            document.getElementById('active-hike-panel').classList.remove('hidden');
+
+            // Render Hero Banner info
+            document.getElementById('hero-img').src = hike.img;
+            document.getElementById('hero-title').innerText = hike.name;
+            document.getElementById('hero-region').innerText = hike.region;
+            document.getElementById('hero-rating-val').innerText = `${hike.views.toFixed(1)} View Rating`;
+            document.getElementById('hero-best-season').innerText = `Best: ${hike.season}`;
+
+            // Draw Stars SVG
+            let starHtml = "";
+            const floorVal = Math.floor(hike.views);
+            for (let i = 0; i < floorVal; i++) {
+                starHtml += `<i data-lucide="star" class="w-4 h-4 fill-monokai-yellow stroke-none"></i>`;
+            }
+            if (hike.views % 1 !== 0) {
+                starHtml += `<i data-lucide="star-half" class="w-4 h-4 fill-monokai-yellow text-monokai-yellow"></i>`;
+            }
+            document.getElementById('hero-stars').innerHTML = starHtml;
+
+            // Base Stats
+            document.getElementById('stat-distance').innerText = hike.distance;
+            document.getElementById('stat-duration').innerText = `${hike.duration} Hours`;
+            document.getElementById('stat-elevation').innerText = `${hike.elevation} m`;
+            document.getElementById('stat-drive').innerText = `${hike.distFromVan} Mins`;
+
+            // Overview Text Panel
+            document.getElementById('hike-description').innerText = hike.instructions;
+            document.getElementById('hike-parking').innerText = hike.parking;
+            document.getElementById('hike-meeting').innerText = hike.meetingPoint;
+
+            // GPS coordinates
+            document.getElementById('gps-coords').innerHTML = `<i data-lucide="map-pin" class="w-3.5 h-3.5 inline mr-1 text-monokai-blue"></i>${hike.coords[0].toFixed(4)}, ${hike.coords[1].toFixed(4)}`;
+
+            // Refresh sidebar list state highlighting
+            renderHikeList();
+            switchTab('overview');
+
+            // Render OpenStreetMap utilizing Leaflet Library
+            setTimeout(() => {
+                updateMap(hike.coords[0], hike.coords[1], hike.name);
+            }, 100);
+
+            // Trigger Calculator Timeline
+            calculateTimeline();
+            lucide.createIcons();
+        }
+
+        let map = null;
+        function updateMap(lat, lng, label) {
+            // Safe destroy map container
+            if (map) {
+                map.remove();
+            }
+            map = L.map('hike-map', {
+                center: [lat, lng],
+                zoom: 13,
+                zoomControl: true,
+                scrollWheelZoom: false
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Premium colored map marker pin
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup(`<b class="font-bold text-monokai-deep">${label} Trailhead</b><br><span class="text-xs text-gray-600">Plan departure here</span>`)
+                .openPopup();
+        }
+
+        function getElevationCorrectedWeather(hike, dateStr) {
+            const date = new Date(dateStr);
+            const month = date.getMonth(); // 0-11
+
+            // Base sea-level temperatures in Vancouver by month
+            const baseTemps = [5, 7, 9, 13, 16, 19, 23, 23, 19, 13, 8, 5];
+            const baseTemp = baseTemps[month];
+
+            // Lapse rate formula: Temperature decreases roughly 0.65°C per 100m of altitude gain
+            const altitude = hike.elevation;
+            const tempAtPeak = Math.round(baseTemp - (altitude * 0.0065));
+
+            let conditions = "Clear";
+            let windSpeed = Math.round(8 + Math.random() * 18);
+            let advice = "";
+            let icon = "sun";
+            let color = "text-monokai-yellow bg-monokai-yellow/10";
+
+            // Months: November to April
+            if (month >= 10 || month <= 3) {
+                if (altitude > 400) {
+                    conditions = "Subalpine Snowpack";
+                    icon = "snowflake";
+                    color = "text-monokai-blue bg-monokai-blue/10";
+                    advice = "⚠️ HEAVY ALPINE SNOW: Trail is covered in deep pack. Microspikes, snowshoes, and crampons are mandatory. High risk of route loss; turn back if markers are obscured.";
+                } else {
+                    conditions = "Cold Rain / Slick";
+                    icon = "cloud-rain";
+                    color = "text-monokai-purple bg-monokai-purple/10";
+                    advice = "🌧️ WET & SLIPPERY: Mud layers are extremely heavy. Footing is unreliable. Bring deep waterproof jackets and wear stiff-soled boots with aggressive tread.";
+                }
+            }
+            // May to June (Spring run-off)
+            else if (month >= 4 && month <= 5) {
+                if (altitude > 900) {
+                    conditions = "Melting Snow Slush";
+                    icon = "cloud-snow";
+                    color = "text-monokai-orange bg-monokai-orange/10";
+                    advice = "⚠️ TRANSITIONAL SLUSH: Subalpine trails are highly slushy with post-holing risks. Watercourses are flooding from fast mountain snow-melt. Be highly cautious at bridges.";
+                } else {
+                    conditions = "Damp / Overcast";
+                    icon = "cloud";
+                    color = "text-monokai-dim bg-monokai-dim/10";
+                    advice = "☁️ OVERCAST: Cool, damp forest conditions. Trails are wet but easily traversable with standard hikers. Recommend light warm layers.";
+                }
+            }
+            // Summer: July to October
+            else {
+                if (Math.random() > 0.85) {
+                    conditions = "Alpine Lightning Risk";
+                    icon = "cloud-lightning";
+                    color = "text-monokai-pink bg-monokai-pink/10";
+                    advice = "⚡ STORM WARNING: Afternoon local heating can spark electrical storms above the treeline. Start very early to be off the peaks before 1:00 PM.";
+                } else {
+                    conditions = "Optimal & Sunny";
+                    icon = "sun";
+                    color = "text-monokai-yellow bg-monokai-yellow/10";
+                    advice = "☀️ IDEAL ADVENTURE CONDITIONS: Clear blue skies. Alpine bugs (wasps and blackflies) are highly active in late summer; apply insect repellent and pack sun cream.";
+                }
+            }
+
+            return {
+                temp: tempAtPeak,
+                conditions: conditions,
+                wind: windSpeed,
+                advice: advice,
+                icon: icon,
+                color: color
+            };
+        }
+
+        function calculateTimeline() {
+            if (!activeHike) return;
+
+            const dateStr = document.getElementById('plan-date').value;
+            const departVal = parseFloat(document.getElementById('plan-departure').value);
+            const lingerVal = parseInt(document.getElementById('plan-linger').value);
+
+            // Set text label readings
+            document.getElementById('val-departure').innerText = formatDecimalTime(departVal);
+            document.getElementById('val-linger').innerText = `${lingerVal} Minutes`;
+
+            // Process dynamic weather simulation
+            const weather = getElevationCorrectedWeather(activeHike, dateStr);
+            document.getElementById('weather-temp').innerText = `${weather.temp}°C`;
+            document.getElementById('weather-label').innerText = weather.conditions;
+            document.getElementById('weather-lapse').innerText = `-${Math.round(activeHike.elevation * 0.0065)}°C Altitude Drop`;
+            document.getElementById('weather-wind').innerText = `${weather.wind} km/h (Peak)`;
+            document.getElementById('weather-alert').className = `text-xs p-3 rounded-xl mt-2 font-medium ${weather.color}`;
+            document.getElementById('weather-alert').innerText = weather.advice;
+
+            // Swap weather icon dynamically
+            const iconEl = document.getElementById('weather-icon');
+            iconEl.setAttribute('data-lucide', weather.icon);
+            document.getElementById('weather-icon-bg').className = `p-4 rounded-xl flex items-center justify-center ${weather.color}`;
+            lucide.createIcons();
+
+            // Calculate timing markers based on Adjusted Pace ratio
+            const baseDuration = activeHike.duration;
+            const adjustedDuration = baseDuration * planPace;
+
+            // Standard splits: 55% ascent, 45% descent
+            const ascentDuration = adjustedDuration * 0.55;
+            const descentDuration = adjustedDuration * 0.45;
+
+            const timeDepart = departVal;
+            const timeSummit = timeDepart + ascentDuration;
+            const timeDescent = timeSummit + (lingerVal / 60);
+            const timeReturn = timeDescent + descentDuration;
+
+            // Set timelines display
+            document.getElementById('time-depart').innerText = formatDecimalTime(timeDepart);
+            document.getElementById('time-summit').innerText = formatDecimalTime(timeSummit);
+            document.getElementById('time-descent').innerText = formatDecimalTime(timeDescent);
+            document.getElementById('time-return').innerText = formatDecimalTime(timeReturn);
+
+            // Labels with calculations info
+            document.getElementById('lbl-ascent-duration').innerText = `Estimated ascent: ${formatDurationText(ascentDuration)}`;
+            document.getElementById('lbl-linger-duration').innerText = `Enjoying peak for ${lingerVal} mins`;
+            document.getElementById('lbl-descent-duration').innerText = `Estimated descent: ${formatDurationText(descentDuration)}`;
+
+            // Check Sunset daylight safety warnings
+            const selectedMonth = new Date(dateStr).getMonth();
+            const sunsetStr = SUNSET_DATABASE[selectedMonth];
+            const sunsetParts = sunsetStr.split(':');
+            const sunsetDecimal = parseInt(sunsetParts[0]) + (parseInt(sunsetParts[1]) / 60);
+
+            const sunsetAlertPill = document.getElementById('sunset-alert-pill');
+            const daylightWarningPanel = document.getElementById('daylight-warning-panel');
+
+            if (timeReturn >= sunsetDecimal) {
+                sunsetAlertPill.classList.remove('hidden');
+                sunsetAlertPill.classList.add('flex');
+                daylightWarningPanel.classList.remove('hidden');
+                document.getElementById('val-sunset').innerText = formatDecimalTime(sunsetDecimal);
+            } else {
+                sunsetAlertPill.classList.add('hidden');
+                sunsetAlertPill.classList.remove('flex');
+                daylightWarningPanel.classList.add('hidden');
+            }
+        }
+
+        function formatDecimalTime(decimalHours) {
+            let hours = Math.floor(decimalHours);
+            const minutes = Math.round((decimalHours - hours) * 60);
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            const strMinutes = minutes < 10 ? '0' + minutes : minutes;
+
+            return `${hours}:${strMinutes} ${ampm}`;
+        }
+
+        function formatDurationText(hours) {
+            const h = Math.floor(hours);
+            const m = Math.round((hours - h) * 60);
+            if (h === 0) return `${m} mins`;
+            return `${h}h ${m}m`;
+        }
+
+        function syncPrintData() {
+            if (!activeHike) return;
+
+            const dateStr = document.getElementById('plan-date').value;
+            const formattedDate = new Date(dateStr).toLocaleDateString('en-US', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            document.getElementById('print-created-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('print-name').innerText = activeHike.name;
+            document.getElementById('print-date').innerText = formattedDate;
+            document.getElementById('print-dist').innerText = activeHike.distance;
+            document.getElementById('print-duration').innerText = `${activeHike.duration} Hours`;
+
+            // Times
+            document.getElementById('print-time-depart').innerText = document.getElementById('time-depart').innerText;
+            document.getElementById('print-time-summit').innerText = document.getElementById('time-summit').innerText;
+            document.getElementById('print-time-descent').innerText = document.getElementById('time-descent').innerText;
+            document.getElementById('print-time-return').innerText = document.getElementById('time-return').innerText;
+
+            // Logistics
+            document.getElementById('print-parking').innerText = activeHike.parking;
+            document.getElementById('print-meeting').innerText = activeHike.meetingPoint;
+            document.getElementById('print-instructions').innerText = activeHike.instructions;
+        }
+
+        function copyItineraryToClipboard() {
+            if (!activeHike) return;
+
+            const dateStr = document.getElementById('plan-date').value;
+            const btn = document.getElementById('btn-share-friends');
+            const btnText = document.getElementById('btn-share-text');
+
+            const textBlock = `🌲 HIKE PLANS: ${activeHike.name.toUpperCase()} 🌲
+📅 Date: ${dateStr}
+🚗 Distance from Vancouver: ${activeHike.distFromVan} mins drive
+🏔 Round-Trip: ${activeHike.distance} (~${activeHike.duration} hours)
+📍 Meeting Point: ${activeHike.meetingPoint}
+⏱ SCHEDULE TIMELINE:
+- Start Trailhead: ${document.getElementById('time-depart').innerText}
+- Arrive Summit: ${document.getElementById('time-summit').innerText}
+- Begin descent: ${document.getElementById('time-descent').innerText}
+- Return to cars: ${document.getElementById('time-return').innerText}
+🅿 Parking Notes: ${activeHike.parking}
+
+Be prepared. Pack the 10 essentials, warm layers, and sturdy footwear!`;
+
+            // Standard fallback clipboard method
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = textBlock;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            // Button success feedback loop
+            btnText.innerText = "Copied!";
+            btn.classList.add('border-monokai-green', 'bg-monokai-green/10');
+            setTimeout(() => {
+                btnText.innerText = "Copy Invite";
+                btn.classList.remove('border-monokai-green', 'bg-monokai-green/10');
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>
