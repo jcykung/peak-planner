@@ -3,6 +3,9 @@
 @tailwind utilities;
 
 @layer base {
+  html, body, #root {
+    height: 100%;
+  }
   body {
     background-color: #2d2a2e;
     color: #fcfcfa;
@@ -49,6 +52,11 @@
   font-family: 'Inter', sans-serif;
 }
 
+/* Print-only sections are always hidden on screen */
+.print-only {
+  display: none !important;
+}
+
 /* Print Layout optimization */
 @media print {
   body {
@@ -57,15 +65,18 @@
     overflow: visible !important;
   }
 
-  main,
-  header,
+  /* Hide all screen UI when printing */
+  .no-print,
+  header.no-print,
+  main.no-print,
   #sidebar-panel,
-  #planning-viewport,
-  .no-print {
+  #planning-viewport {
     display: none !important;
   }
 
-  .print-only {
+  /* Show the correct print section based on data attribute */
+  .print-only[data-print-mode="single"]#print-single-hike-layout,
+  .print-only[data-print-mode="wishlist"]#print-wishlist-layout {
     display: block !important;
   }
 
@@ -81,8 +92,4 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-}
-
-.print-only {
-  display: none;
 }

@@ -397,7 +397,7 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
   });
 
   return (
-    <>
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Top Sleek Header */}
       <header className="bg-monokai-deep border-b border-monokai-hover px-4 md:px-6 py-3.5 flex items-center justify-between z-10 no-print">
         <div className="flex items-center space-x-3">
@@ -689,6 +689,7 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
                         className="flex-1 min-w-0 flex space-x-3 cursor-pointer"
                         onClick={() => {
                           setActiveHike(hike);
+                          setActivePlanningTab("overview");
                           // Auto shift on mobile to planner tab
                           if (window.innerWidth < 1024) {
                             setActiveMobileTab("plan");
@@ -760,9 +761,9 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
                       onDragEnd={handleDragEnd}
                       onDragOver={handleDragOver}
                       onDrop={() => handleDrop(hike.id)}
-                      className={`p-3 rounded-xl border transition flex flex-col space-y-2 relative bg-monokai-card border-monokai-hover text-monokai-dim hover:text-monokai-text cursor-grab active:cursor-grabbing ${
+                      className={`p-3 rounded-xl border transition flex flex-col space-y-2 relative bg-monokai-card border-monokai-hover text-monokai-dim hover:text-monokai-text ${
                         isSelected ? 'border-monokai-yellow bg-monokai-active' : ''
-                      } ${draggedId === hike.id ? 'opacity-40' : ''}`}
+                      } ${draggedId === hike.id ? 'dragging' : ''}`}
                     >
                       <div className="flex items-start space-x-3">
                         {/* Left Completed checkbox */}
@@ -790,6 +791,7 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
                           className="flex-1 min-w-0 flex space-x-3 items-start cursor-pointer"
                           onClick={() => {
                             setActiveHike(hike);
+                            setActivePlanningTab("overview");
                             if (window.innerWidth < 1024) {
                               setActiveMobileTab("plan");
                             }
@@ -824,7 +826,7 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
                         </div>
 
                         {/* Drag Handle grip icon */}
-                        <div className="shrink-0 text-monokai-dim/40 p-1">
+                        <div class="shrink-0 text-monokai-dim/40 cursor-grab active:cursor-grabbing p-1">
                           <GripVertical className="w-4 h-4" />
                         </div>
                       </div>
@@ -1430,7 +1432,7 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
       <section 
         className="print-only p-10 text-gray-900 bg-white max-w-4xl mx-auto space-y-8" 
         id="print-single-hike-layout" 
-        style={{ display: printMode === 'single' ? 'block' : 'none' }}
+        data-print-mode={printMode}
       >
         <div className="border-b-4 border-gray-900 pb-5 flex justify-between items-end">
           <div>
@@ -1599,7 +1601,7 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
       <section 
         className="print-only p-10 text-gray-900 bg-white max-w-4xl mx-auto space-y-8" 
         id="print-wishlist-layout"
-        style={{ display: printMode === 'wishlist' ? 'block' : 'none' }}
+        data-print-mode={printMode}
       >
         <div className="border-b-4 border-gray-900 pb-5 flex justify-between items-end">
           <div>
@@ -1694,6 +1696,6 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
           {toast.msg}
         </div>
       )}
-    </>
+    </div>
   );
 }
