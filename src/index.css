@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #2d2a2e;
+    color: #fcfcfa;
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Custom scrollbar layout */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #19181a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3e3b3f;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ffd866;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(34, 31, 34, 0.75);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(147, 146, 147, 0.15);
+}
+
+/* Drag and drop styling helpers */
+.dragging {
+  opacity: 0.5;
+  border: 2px dashed #ffd866 !important;
+  background: #19181a !important;
+}
+
+/* Leaflet map layout overrides to match container */
+.leaflet-container {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Print Layout optimization */
+@media print {
+  body {
+    background: white !important;
+    color: #111827 !important;
+    overflow: visible !important;
+  }
+
+  main,
+  header,
+  #sidebar-panel,
+  #planning-viewport,
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .print-card {
+    border: 1px solid #e5e7eb !important;
+    background: #f9fafb !important;
+    color: #111827 !important;
+    page-break-inside: avoid;
+  }
+
+  /* Force background colors and borders to print properly */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+.print-only {
+  display: none;
+}
