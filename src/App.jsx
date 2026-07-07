@@ -3,7 +3,7 @@ import {
   MountainSnow, Download, Upload, Printer, ExternalLink, Menu, Heart, 
   Calendar, Search, Info, Copy, Compass, Image as ImageIcon, CheckCircle, 
   Save, Activity, Timer, ChevronsUp, Car, BookOpen, CalendarRange, 
-  Play, MapPin, Sliders, Sun, Snowflake, CloudRain, CloudSnow, Cloud, 
+  MapPin, Sliders, Sun, Snowflake, CloudRain, CloudSnow, Cloud, 
   ParkingCircle, Mountain, Clock, Check, GripVertical, Trash2, 
   MessageSquare, Star, StarHalf 
 } from 'lucide-react';
@@ -12,6 +12,135 @@ import { getElevationCorrectedWeather } from './utils/weather';
 import { formatDecimalHour, formatDurationText, calculateTimelineSplits } from './utils/timeline';
 import { exportBackupJSON, importBackupJSONFile } from './utils/backup';
 import HikeMap from './components/HikeMap';
+
+// 40 Curated Hiking Quotes & Instagram Captions from the JourneyEra article
+const HIKING_QUOTES = [
+  "Take only pictures, leave only footprints.",
+  "In every walk with nature, one receives far more than he seeks.",
+  "Hiking is my therapy.",
+  "Mountains are calling, and I must go.",
+  "Wander where the Wi-Fi is weak.",
+  "Nature is not a place to visit; it is home.",
+  "Find me where the wild things are.",
+  "Sky above, earth below, peace within.",
+  "Nature is cheaper than therapy.",
+  "Lost in the right direction.",
+  "The earth has music for those who listen.",
+  "Life is short. Take the scenic route.",
+  "Keep calm and hike on.",
+  "Exploring the mountains is my happy place.",
+  "Life’s a climb, but the view is great.",
+  "Wander often, wonder always.",
+  "Not all classrooms have four walls.",
+  "Not all those who wander are lost. — J.R.R. Tolkien",
+  "The journey of a thousand miles begins with a single step. – Lao Tzu",
+  "Every mountain top is within reach if you just keep climbing. — Barry Finlay",
+  "It’s not the mountain we conquer, but ourselves. — Sir Edmund Hillary",
+  "Your mountain is waiting, so get on your way. – Dr. Seuss",
+  "The world is big, and I want to have a good look at it before it gets dark. – John Muir",
+  "Wilderness is not a luxury but a necessity of the human spirit. – Edward Abbey",
+  "You need special shoes for hiking—and a bit of a special soul as well. – Terri Guillemets",
+  "Between every two pine trees, there is a door leading to a new way of life. – John Muir",
+  "Do not go where the path may lead, go instead where there is no path and leave a trail. – Ralph Waldo Emerson",
+  "Climb mountains not so the world can see you, but so you can see the world.",
+  "Difficult roads often lead to beautiful destinations.",
+  "The best view comes after the hardest climb.",
+  "Go where you feel most alive.",
+  "Adventure awaits.",
+  "Fresh air, don’t care.",
+  "Another day, another trail.",
+  "Adventure is out there.",
+  "Hiking mode: ON.",
+  "Mountain mode activated.",
+  "Peak happiness.",
+  "High tides, good vibes, and hiking strides.",
+  "Embrace the pace of nature."
+];
+
+// Helper to get mock reviews for each hike deterministically based on its ID
+const getMockReviewsForHike = (hike) => {
+  const hash = hike.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  const reviewers = [
+    ["Sarah M.", "Alex K.", "David L."],
+    ["Emily R.", "Jordan B.", "Chris T."],
+    ["Jessica W.", "Michael S.", "Lauren H."],
+    ["Danny V.", "Samantha P.", "Ryan G."]
+  ][hash % 4];
+
+  const ratingOffsets = [
+    [5, 5, 4],
+    [5, 4, 4],
+    [4, 5, 4],
+    [5, 4, 5]
+  ][hash % 4];
+
+  const dates = [
+    "June 28, 2026", "July 2, 2026", "May 15, 2026", "April 10, 2026", "October 5, 2025"
+  ];
+
+  let reviews = [];
+  if (hike.difficulty === "Easy") {
+    reviews = [
+      {
+        name: reviewers[0],
+        rating: ratingOffsets[0],
+        date: dates[hash % 5],
+        comment: `Beautiful walk! Very beginner-friendly. The path was clear, and the views at the end were stunning for such a short hike. Highly recommend for families!`
+      },
+      {
+        name: reviewers[1],
+        rating: ratingOffsets[1],
+        date: dates[(hash + 1) % 5],
+        comment: `Perfect evening hike. Trail was a bit crowded near the start, but it thinned out. The elevation gain was barely noticeable. Dog-friendly too!`
+      }
+    ];
+  } else if (hike.difficulty === "Intermediate") {
+    reviews = [
+      {
+        name: reviewers[0],
+        rating: ratingOffsets[0],
+        date: dates[hash % 5],
+        comment: `A solid intermediate climb. The switchbacks get your heart rate going, but the panoramic views are 100% worth it. Bring good shoes as it gets rooty.`
+      },
+      {
+        name: reviewers[1],
+        rating: ratingOffsets[1],
+        date: dates[(hash + 1) % 5],
+        comment: `Did this on a Tuesday morning. Trail conditions were great. It starts steep but levels off. Make sure to pack bug spray for the subalpine forest section!`
+      }
+    ];
+  } else {
+    reviews = [
+      {
+        name: reviewers[0],
+        rating: ratingOffsets[0],
+        date: dates[hash % 5],
+        comment: `Absolute grind but spectacular! The final ridge scramble is steep and requires careful footing. Make sure you bring at least 2.5L of water and wear real hiking boots.`
+      },
+      {
+        name: reviewers[1],
+        rating: ratingOffsets[1],
+        date: dates[(hash + 1) % 5],
+        comment: `Amazing challenge. The elevation gain is relentless from the start. Very rugged and technical. Views from the summit are absolutely mind-blowing.`
+      }
+    ];
+  }
+
+  return reviews;
+};
+
+// Helper to get recommended gear depending on trail difficulty
+const getRecommendedGearForHike = (hike) => {
+  const common = ["1.5L+ Water", "High-energy snacks", "First aid kit", "Offline map / GPS"];
+  if (hike.difficulty === "Easy") {
+    return [...common, "Comfortable running shoes or sneakers", "Light windbreaker layer"];
+  } else if (hike.difficulty === "Intermediate") {
+    return [...common, "Hiking boots or trail runners", "Thermal layering jacket", "Trekking poles", "Insect repellent"];
+  } else {
+    return [...common, "Sturdy ankle-support boots", "Insulating layers & rain shell", "Trekking poles", "Bear spray", "Emergency space blanket"];
+  }
+};
 
 export default function App() {
   // --- STATE ---
@@ -39,6 +168,13 @@ export default function App() {
   const [draggedId, setDraggedId] = useState(null);
   const [printMode, setPrintMode] = useState("single"); // "single" or "wishlist"
   
+  // New States for Custom Reviews and Quote
+  const [currentQuote, setCurrentQuote] = useState("");
+  const [customReviews, setCustomReviews] = useState({});
+  const [reviewName, setReviewName] = useState("");
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  
   const fileInputRef = useRef(null);
 
   // --- LOCAL STORAGE ---
@@ -51,6 +187,15 @@ export default function App() {
     } catch (e) {
       console.error("Failed to load wishlist from LocalStorage.", e);
     }
+
+    try {
+      const storedReviews = localStorage.getItem('peakplanner_custom_reviews');
+      if (storedReviews) {
+        setCustomReviews(JSON.parse(storedReviews));
+      }
+    } catch (e) {
+      console.error("Failed to load custom reviews from LocalStorage.", e);
+    }
   }, []);
 
   const saveWishlist = (updated) => {
@@ -61,6 +206,26 @@ export default function App() {
       console.error("Failed to save wishlist to LocalStorage.", e);
     }
   };
+
+  const saveCustomReviews = (updated) => {
+    setCustomReviews(updated);
+    try {
+      localStorage.setItem('peakplanner_custom_reviews', JSON.stringify(updated));
+    } catch (e) {
+      console.error("Failed to save custom reviews to LocalStorage.", e);
+    }
+  };
+
+  // Sync random quote whenever active hike changes
+  useEffect(() => {
+    if (activeHike) {
+      // Pick a random quote from HIKING_QUOTES
+      const randomIndex = Math.floor(Math.random() * HIKING_QUOTES.length);
+      setCurrentQuote(HIKING_QUOTES[randomIndex]);
+    } else {
+      setCurrentQuote("");
+    }
+  }, [activeHike?.id]);
 
   // Sync comment field when active hike changes
   useEffect(() => {
@@ -136,6 +301,37 @@ export default function App() {
     saveWishlist(updated);
     setSavingComment(true);
     setTimeout(() => setSavingComment(false), 1000);
+  };
+
+  const handleAddReview = (e) => {
+    e.preventDefault();
+    if (!reviewName.trim() || !reviewComment.trim()) {
+      showToast("Name and comment are required!", true);
+      return;
+    }
+    
+    const newReview = {
+      name: reviewName.trim(),
+      rating: Number(reviewRating),
+      comment: reviewComment.trim(),
+      date: new Date().toLocaleDateString('en-US', {
+        month: 'long', day: 'numeric', year: 'numeric'
+      })
+    };
+
+    const updated = {
+      ...customReviews,
+      [activeHike.id]: [
+        ...(customReviews[activeHike.id] || []),
+        newReview
+      ]
+    };
+
+    saveCustomReviews(updated);
+    setReviewName("");
+    setReviewComment("");
+    setReviewRating(5);
+    showToast("Review submitted successfully!");
   };
 
   const handleRemoveFromWishlist = (hikeId) => {
@@ -231,7 +427,6 @@ export default function App() {
     e.target.value = ""; // Reset
   };
 
-  // Clipboard Copiers
   const handleCopySingleItinerary = () => {
     if (!activeHike) return;
 
@@ -246,8 +441,9 @@ export default function App() {
     const textBlock = `🌲 TRIP PLAN: ${activeHike.name.toUpperCase()} 🌲
 📅 Target Date: ${planDate}
 🚗 Distance from Vancouver: ${activeHike.distFromVan} mins drive
-🏔 Route Specs: ${activeHike.distance} round-trip (~${activeHike.duration} hours)
+🏔 Route Specs: ${activeHike.distance} | ${activeHike.elevation}m gain | ~${activeHike.duration} hours
 📍 Suggested Meeting Point: ${activeHike.meetingPoint}
+
 ⏱ EXPEDITION SCHEDULE:
 - Trailhead Start: ${formatDecimalHour(splits.timeDepart)}
 - Reach Summit Peak: ${formatDecimalHour(splits.timeSummit)}
@@ -255,7 +451,17 @@ export default function App() {
 - Return to Vehicles: ${formatDecimalHour(splits.timeReturn)}
 * Parking Area: ${activeHike.parking}
 
-Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
+💬 TRAIL INSPIRATION:
+"${currentQuote}"
+
+🎒 RECOMMENDED ESSENTIALS CHECKLIST:
+- Navigation (offline maps, compass, GPS app)
+- Safety & light (headlamp/flashlight, extra batteries)
+- First Aid Kit (bandages, antiseptic, personal meds)
+- Repair kit & tools (multi-tool, knife, tape)
+- Emergency shelter & fire starter (matches/lighter, space blanket)
+- Hydration & nutrition (plenty of water, high-energy snacks)
+- Thermal layers (moisture-wicking base, warm fleece, rain shell)`;
 
     navigator.clipboard.writeText(textBlock)
       .then(() => showToast("Copied single plan!"))
@@ -324,6 +530,10 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
       if (activeSort === "distance-asc") return a.distFromVan - b.distFromVan;
       if (activeSort === "difficulty-asc") return a.difficultyLevel - b.difficultyLevel;
       if (activeSort === "difficulty-desc") return b.difficultyLevel - a.difficultyLevel;
+      if (activeSort === "elevation-desc") return b.elevation - a.elevation;
+      if (activeSort === "elevation-asc") return a.elevation - b.elevation;
+      if (activeSort === "trail-distance-desc") return parseFloat(b.distance) - parseFloat(a.distance);
+      if (activeSort === "trail-distance-asc") return parseFloat(a.distance) - parseFloat(b.distance);
       return 0;
     });
 
@@ -350,6 +560,10 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
         if (activeSort === "distance-asc") return a.distFromVan - b.distFromVan;
         if (activeSort === "difficulty-asc") return a.difficultyLevel - b.difficultyLevel;
         if (activeSort === "difficulty-desc") return b.difficultyLevel - a.difficultyLevel;
+        if (activeSort === "elevation-desc") return b.elevation - a.elevation;
+        if (activeSort === "elevation-asc") return a.elevation - b.elevation;
+        if (activeSort === "trail-distance-desc") return parseFloat(b.distance) - parseFloat(a.distance);
+        if (activeSort === "trail-distance-asc") return parseFloat(a.distance) - parseFloat(b.distance);
         return 0;
       });
     }
@@ -586,6 +800,10 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
                   <option value="distance-asc">🚗 Distance from Van (Closest)</option>
                   <option value="difficulty-asc">🏔 Difficulty (Easy-Hard)</option>
                   <option value="difficulty-desc">🏔 Difficulty (Hard-Easy)</option>
+                  <option value="elevation-desc">📈 Elevation Gain (Highest first)</option>
+                  <option value="elevation-asc">📉 Elevation Gain (Lowest first)</option>
+                  <option value="trail-distance-desc">🏃 Total Distance (Longest first)</option>
+                  <option value="trail-distance-asc">🏃 Total Distance (Shortest first)</option>
                   {activeSidebarTab === 'wishlist' && (
                     <option value="manual-order">🔄 Drag Priority Order</option>
                   )}
@@ -1109,22 +1327,81 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
                         </div>
                       </div>
 
-                      {/* YouTube Frame */}
+                      {/* Hiking Quote Banner */}
+                      {currentQuote && (
+                        <div className="bg-gradient-to-r from-monokai-deep to-monokai-card border border-monokai-yellow/30 rounded-xl p-4 flex items-start gap-3">
+                          <span className="text-2xl text-monokai-yellow/70 leading-none font-serif shrink-0 select-none">&ldquo;</span>
+                          <p className="text-sm italic text-monokai-text/90 leading-relaxed flex-1">{currentQuote}</p>
+                          <span className="text-2xl text-monokai-yellow/70 leading-none font-serif shrink-0 self-end select-none">&rdquo;</span>
+                        </div>
+                      )}
+
+                      {/* Trail Reviews & Community Reports */}
                       <div className="space-y-3">
                         <h4 className="text-xs font-mono text-monokai-yellow uppercase flex items-center gap-2">
-                          <Play className="w-4 h-4 text-monokai-pink" />
-                          <span>VancouverTrails Video Overview</span>
+                          <MessageSquare className="w-4 h-4 text-monokai-blue" />
+                          <span>Trail Reviews &amp; Community Reports</span>
                         </h4>
-                        <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-monokai-hover bg-monokai-deep">
-                          <iframe 
-                            className="absolute inset-0 w-full h-full" 
-                            src={`https://www.youtube.com/embed/${activeHike.youtube}?rel=0`}
-                            title="VancouverTrails Hike Overview" 
-                            frameBorder="0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                            allowFullScreen
-                          />
+
+                        <div className="space-y-3">
+                          {[...getMockReviewsForHike(activeHike), ...(customReviews[activeHike.id] || [])].map((review, i) => (
+                            <div key={i} className="bg-monokai-card border border-monokai-hover rounded-xl p-3.5 space-y-2">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-monokai-blue to-monokai-purple flex items-center justify-center text-xs font-bold text-monokai-deep shrink-0">
+                                    {review.name.charAt(0)}
+                                  </div>
+                                  <span className="text-xs font-bold text-monokai-text">{review.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex">
+                                    {Array.from({ length: review.rating }).map((_, s) => (
+                                      <Star key={s} className="w-3.5 h-3.5 fill-monokai-yellow stroke-none" />
+                                    ))}
+                                  </div>
+                                  <span className="text-[9px] font-mono text-monokai-dim">{review.date}</span>
+                                </div>
+                              </div>
+                              <p className="text-xs text-monokai-dim leading-relaxed">{review.comment}</p>
+                            </div>
+                          ))}
                         </div>
+
+                        {/* Add Your Review Form */}
+                        <form onSubmit={handleAddReview} className="bg-monokai-deep border border-monokai-hover rounded-xl p-4 space-y-3">
+                          <p className="text-[10px] font-mono text-monokai-dim uppercase tracking-wider">Share Your Trail Experience</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input
+                              type="text"
+                              placeholder="Your name"
+                              value={reviewName}
+                              onChange={e => setReviewName(e.target.value)}
+                              className="bg-monokai-bg text-monokai-text text-xs rounded-lg border border-monokai-hover px-3 py-2 focus:outline-none focus:ring-1 focus:ring-monokai-yellow"
+                            />
+                            <select
+                              value={reviewRating}
+                              onChange={e => setReviewRating(Number(e.target.value))}
+                              className="bg-monokai-bg text-monokai-text text-xs rounded-lg border border-monokai-hover px-3 py-2 focus:outline-none focus:ring-1 focus:ring-monokai-yellow"
+                            >
+                              <option value={5}>&#9733;&#9733;&#9733;&#9733;&#9733; Excellent</option>
+                              <option value={4}>&#9733;&#9733;&#9733;&#9733; Great</option>
+                              <option value={3}>&#9733;&#9733;&#9733; Good</option>
+                              <option value={2}>&#9733;&#9733; Fair</option>
+                              <option value={1}>&#9733; Poor</option>
+                            </select>
+                          </div>
+                          <textarea
+                            placeholder="Describe trail conditions, difficulty, highlights..."
+                            value={reviewComment}
+                            onChange={e => setReviewComment(e.target.value)}
+                            rows={2}
+                            className="w-full bg-monokai-bg text-monokai-text text-xs rounded-lg border border-monokai-hover px-3 py-2 focus:outline-none focus:ring-1 focus:ring-monokai-yellow resize-none"
+                          />
+                          <button type="submit" className="w-full bg-monokai-blue/20 hover:bg-monokai-blue/30 border border-monokai-blue/40 text-monokai-blue text-xs font-semibold py-2 rounded-lg transition flex items-center justify-center gap-1.5">
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            Submit Review
+                          </button>
+                        </form>
                       </div>
                     </div>
 
@@ -1434,18 +1711,20 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
         id="print-single-hike-layout" 
         data-print-mode={printMode}
       >
-        <div className="border-b-4 border-gray-900 pb-5 flex justify-between items-end">
-          <div>
-            <span className="text-xs font-bold tracking-widest text-blue-600 uppercase block mb-1">
-              Wilderness Expedition Guide & Schedule
-            </span>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-gray-900">PeakPlanner Itinerary</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Calculated split schedule for a safe mountain adventure</p>
-          </div>
-          <div className="text-right font-mono text-[10px] text-gray-500">
-            <p className="font-bold text-gray-900">PEAKPLANNER ITINERARY</p>
-            <p>Printed: {todayPrintDate}</p>
-            <p>Primary Source: VancouverTrails.com</p>
+        <div className="rounded-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-700 to-teal-600 p-6 flex justify-between items-end">
+            <div>
+              <span className="text-xs font-bold tracking-widest text-emerald-200 uppercase block mb-1">
+                Wilderness Expedition Guide &amp; Schedule
+              </span>
+              <h1 className="text-3xl font-black uppercase tracking-tight text-white">PeakPlanner Itinerary</h1>
+              <p className="text-xs text-emerald-200 mt-0.5">Calculated split schedule for a safe mountain adventure</p>
+            </div>
+            <div className="text-right font-mono text-[10px] text-emerald-200">
+              <p className="font-bold text-white">PEAKPLANNER ITINERARY</p>
+              <p>Printed: {todayPrintDate}</p>
+              <p>Primary Source: VancouverTrails.com</p>
+            </div>
           </div>
         </div>
 
@@ -1475,20 +1754,20 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
             </div>
 
             <div className="grid grid-cols-4 gap-4">
-              <div className="border border-gray-200 bg-gray-50 p-4 rounded-2xl text-center shadow-sm">
-                <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider mb-1">Target Trail</span>
+              <div className="border border-emerald-200 bg-emerald-50 p-4 rounded-2xl text-center shadow-sm">
+                <span className="block text-[9px] uppercase font-bold text-emerald-600 tracking-wider mb-1">Target Trail</span>
                 <span className="text-sm font-extrabold text-gray-900 block truncate">{activeHike.name}</span>
               </div>
-              <div className="border border-gray-200 bg-gray-50 p-4 rounded-2xl text-center shadow-sm">
-                <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider mb-1">Target Date</span>
+              <div className="border border-blue-200 bg-blue-50 p-4 rounded-2xl text-center shadow-sm">
+                <span className="block text-[9px] uppercase font-bold text-blue-600 tracking-wider mb-1">Target Date</span>
                 <span className="text-sm font-extrabold text-gray-900 block">{formattedPrintDate()}</span>
               </div>
-              <div className="border border-gray-200 bg-gray-50 p-4 rounded-2xl text-center shadow-sm">
-                <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider mb-1">Round-Trip Distance</span>
+              <div className="border border-orange-200 bg-orange-50 p-4 rounded-2xl text-center shadow-sm">
+                <span className="block text-[9px] uppercase font-bold text-orange-600 tracking-wider mb-1">Round-Trip Distance</span>
                 <span className="text-sm font-extrabold text-gray-900 block">{activeHike.distance}</span>
               </div>
-              <div className="border border-gray-200 bg-gray-50 p-4 rounded-2xl text-center shadow-sm">
-                <span className="block text-[9px] uppercase font-bold text-gray-400 tracking-wider mb-1">Driving Distance</span>
+              <div className="border border-purple-200 bg-purple-50 p-4 rounded-2xl text-center shadow-sm">
+                <span className="block text-[9px] uppercase font-bold text-purple-600 tracking-wider mb-1">Driving Distance</span>
                 <span className="text-sm font-extrabold text-gray-900 block">{activeHike.distFromVan} Mins</span>
               </div>
             </div>
@@ -1501,29 +1780,37 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
                   <span className="text-xs font-mono text-gray-400">Pace Corrected ({planPace * 100}%)</span>
                 </h3>
 
-                <div className="space-y-4 relative pl-4 before:absolute before:inset-0 before:left-[19px] before:top-2 before:bottom-2 before:w-0.5 before:bg-gray-200">
-                  <div className="flex items-center justify-between text-xs relative">
-                    <span className="absolute left-[-21px] w-2.5 h-2.5 rounded-full bg-blue-500 border-2 border-white ring-4 ring-blue-50"></span>
-                    <span className="font-medium text-gray-700">1. Depart Trailhead Parking Lot</span>
-                    <span className="font-mono font-black text-gray-900">{formatDecimalHour(activeTimeline.timeDepart)}</span>
+                <div className="divide-y divide-gray-100">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-full bg-blue-500 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-sm">1</span>
+                      <span className="font-semibold text-gray-700 text-xs">Depart Trailhead Parking Lot</span>
+                    </div>
+                    <span className="font-mono font-black text-blue-600 text-sm">{formatDecimalHour(activeTimeline.timeDepart)}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs relative">
-                    <span className="absolute left-[-21px] w-2.5 h-2.5 rounded-full bg-pink-500 border-2 border-white ring-4 ring-pink-50"></span>
-                    <span className="font-medium text-gray-700">2. Reach Summit Vista Point</span>
-                    <span className="font-mono font-black text-gray-900">{formatDecimalHour(activeTimeline.timeSummit)}</span>
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-full bg-pink-500 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-sm">2</span>
+                      <span className="font-semibold text-gray-700 text-xs">Reach Summit Vista Point</span>
+                    </div>
+                    <span className="font-mono font-black text-pink-600 text-sm">{formatDecimalHour(activeTimeline.timeSummit)}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs relative">
-                    <span className="absolute left-[-21px] w-2.5 h-2.5 rounded-full bg-purple-500 border-2 border-white ring-4 ring-purple-50"></span>
-                    <span className="font-medium text-gray-700">3. Begin Descending Route</span>
-                    <span className="font-mono font-black text-gray-900">{formatDecimalHour(activeTimeline.timeDescent)}</span>
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-full bg-purple-500 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-sm">3</span>
+                      <span className="font-semibold text-gray-700 text-xs">Begin Descending Route</span>
+                    </div>
+                    <span className="font-mono font-black text-purple-600 text-sm">{formatDecimalHour(activeTimeline.timeDescent)}</span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs relative">
-                    <span className="absolute left-[-21px] w-2.5 h-2.5 rounded-full bg-green-500 border-2 border-white ring-4 ring-green-50"></span>
-                    <span className="font-medium text-gray-700">4. Complete Route to Vehicles</span>
-                    <span className="font-mono font-black text-gray-900">{formatDecimalHour(activeTimeline.timeReturn)}</span>
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex items-center gap-3">
+                      <span className="w-7 h-7 rounded-full bg-emerald-500 text-white font-black flex items-center justify-center text-xs shrink-0 shadow-sm">4</span>
+                      <span className="font-semibold text-gray-700 text-xs">Complete Route to Vehicles</span>
+                    </div>
+                    <span className="font-mono font-black text-emerald-600 text-sm">{formatDecimalHour(activeTimeline.timeReturn)}</span>
                   </div>
                 </div>
               </div>
@@ -1548,6 +1835,13 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
               <h3 className="text-sm font-black uppercase tracking-wider text-gray-900 border-b pb-2">Trail Navigation Walkthrough</h3>
               <p className="text-xs leading-relaxed text-gray-700 font-medium">{activeHike.instructions}</p>
             </div>
+
+            {currentQuote && (
+              <div className="border-l-4 border-blue-500 bg-blue-50 p-5 rounded-r-2xl">
+                <p className="text-sm italic font-semibold text-blue-900 leading-relaxed">&ldquo;{currentQuote}&rdquo;</p>
+                <p className="text-[9px] font-mono text-blue-500 mt-2 uppercase tracking-widest">&mdash; Trail Inspiration</p>
+              </div>
+            )}
           </>
         )}
 
@@ -1603,18 +1897,20 @@ Prepare well, pack the 10 essentials, warm insulation, and sturdy footwear!`;
         id="print-wishlist-layout"
         data-print-mode={printMode}
       >
-        <div className="border-b-4 border-gray-900 pb-5 flex justify-between items-end">
-          <div>
-            <span className="text-xs font-bold tracking-widest text-emerald-600 uppercase block mb-1">
-              Adventure Catalog & Completion Logs
-            </span>
-            <h1 className="text-3xl font-black uppercase tracking-tight text-gray-900">Hike Wishlist Dossier</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Selected hikes and priorities generated via PeakPlanner</p>
-          </div>
-          <div className="text-right font-mono text-[10px] text-gray-500">
-            <p className="font-bold text-gray-900">WISHLIST PORTFOLIO</p>
-            <p>Printed: {todayPrintDate}</p>
-            <p>Primary Source: VancouverTrails.com</p>
+        <div className="rounded-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-emerald-600 to-green-700 p-6 flex justify-between items-end">
+            <div>
+              <span className="text-xs font-bold tracking-widest text-emerald-200 uppercase block mb-1">
+                Adventure Catalog &amp; Completion Logs
+              </span>
+              <h1 className="text-3xl font-black uppercase tracking-tight text-white">Hike Wishlist Dossier</h1>
+              <p className="text-xs text-emerald-200 mt-0.5">Selected hikes and priorities generated via PeakPlanner</p>
+            </div>
+            <div className="text-right font-mono text-[10px] text-emerald-200">
+              <p className="font-bold text-white">WISHLIST PORTFOLIO</p>
+              <p>Printed: {todayPrintDate}</p>
+              <p>Primary Source: VancouverTrails.com</p>
+            </div>
           </div>
         </div>
 

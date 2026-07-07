@@ -59,6 +59,20 @@
 
 /* Print Layout optimization */
 @media print {
+  /* Allow the root containers to grow to full content height */
+  html, body, #root {
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Override the flex column layout that restricts height */
+  #root > div {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+
   body {
     background: white !important;
     color: #111827 !important;
@@ -78,12 +92,24 @@
   .print-only[data-print-mode="single"]#print-single-hike-layout,
   .print-only[data-print-mode="wishlist"]#print-wishlist-layout {
     display: block !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    page-break-inside: auto;
   }
 
   .print-card {
     border: 1px solid #e5e7eb !important;
     background: #f9fafb !important;
     color: #111827 !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Allow wishlist hike entries to break across pages cleanly */
+  #print-wishlist-layout .space-y-4 > div {
+    break-inside: avoid;
     page-break-inside: avoid;
   }
 
@@ -93,3 +119,4 @@
     print-color-adjust: exact !important;
   }
 }
+
