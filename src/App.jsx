@@ -5,7 +5,7 @@ import {
   Save, Activity, Timer, ChevronsUp, Car, BookOpen, CalendarRange, 
   MapPin, Sliders, Sun, Snowflake, CloudRain, CloudSnow, Cloud, 
   ParkingCircle, Mountain, Clock, Check, GripVertical, Trash2, 
-  MessageSquare, Star, StarHalf 
+  MessageSquare, Star, StarHalf, Wind, Thermometer 
 } from 'lucide-react';
 import { HIKE_DATA } from './data/hikes';
 import { getElevationCorrectedWeather } from './utils/weather';
@@ -57,78 +57,7 @@ const HIKING_QUOTES = [
   "Embrace the pace of nature."
 ];
 
-// Helper to get mock reviews for each hike deterministically based on its ID
-const getMockReviewsForHike = (hike) => {
-  const hash = hike.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  
-  const reviewers = [
-    ["Sarah M.", "Alex K.", "David L."],
-    ["Emily R.", "Jordan B.", "Chris T."],
-    ["Jessica W.", "Michael S.", "Lauren H."],
-    ["Danny V.", "Samantha P.", "Ryan G."]
-  ][hash % 4];
 
-  const ratingOffsets = [
-    [5, 5, 4],
-    [5, 4, 4],
-    [4, 5, 4],
-    [5, 4, 5]
-  ][hash % 4];
-
-  const dates = [
-    "June 28, 2026", "July 2, 2026", "May 15, 2026", "April 10, 2026", "October 5, 2025"
-  ];
-
-  let reviews = [];
-  if (hike.difficulty === "Easy") {
-    reviews = [
-      {
-        name: reviewers[0],
-        rating: ratingOffsets[0],
-        date: dates[hash % 5],
-        comment: `Beautiful walk! Very beginner-friendly. The path was clear, and the views at the end were stunning for such a short hike. Highly recommend for families!`
-      },
-      {
-        name: reviewers[1],
-        rating: ratingOffsets[1],
-        date: dates[(hash + 1) % 5],
-        comment: `Perfect evening hike. Trail was a bit crowded near the start, but it thinned out. The elevation gain was barely noticeable. Dog-friendly too!`
-      }
-    ];
-  } else if (hike.difficulty === "Intermediate") {
-    reviews = [
-      {
-        name: reviewers[0],
-        rating: ratingOffsets[0],
-        date: dates[hash % 5],
-        comment: `A solid intermediate climb. The switchbacks get your heart rate going, but the panoramic views are 100% worth it. Bring good shoes as it gets rooty.`
-      },
-      {
-        name: reviewers[1],
-        rating: ratingOffsets[1],
-        date: dates[(hash + 1) % 5],
-        comment: `Did this on a Tuesday morning. Trail conditions were great. It starts steep but levels off. Make sure to pack bug spray for the subalpine forest section!`
-      }
-    ];
-  } else {
-    reviews = [
-      {
-        name: reviewers[0],
-        rating: ratingOffsets[0],
-        date: dates[hash % 5],
-        comment: `Absolute grind but spectacular! The final ridge scramble is steep and requires careful footing. Make sure you bring at least 2.5L of water and wear real hiking boots.`
-      },
-      {
-        name: reviewers[1],
-        rating: ratingOffsets[1],
-        date: dates[(hash + 1) % 5],
-        comment: `Amazing challenge. The elevation gain is relentless from the start. Very rugged and technical. Views from the summit are absolutely mind-blowing.`
-      }
-    ];
-  }
-
-  return reviews;
-};
 
 // Helper to get recommended gear depending on trail difficulty
 const getRecommendedGearForHike = (hike) => {
@@ -170,10 +99,7 @@ export default function App() {
   
   // New States for Custom Reviews and Quote
   const [currentQuote, setCurrentQuote] = useState("");
-  const [customReviews, setCustomReviews] = useState({});
-  const [reviewName, setReviewName] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
-  const [reviewComment, setReviewComment] = useState("");
+  const [windyOverlay, setWindyOverlay] = useState("wind");
   
   const fileInputRef = useRef(null);
 
@@ -187,15 +113,6 @@ export default function App() {
     } catch (e) {
       console.error("Failed to load wishlist from LocalStorage.", e);
     }
-
-    try {
-      const storedReviews = localStorage.getItem('peakplanner_custom_reviews');
-      if (storedReviews) {
-        setCustomReviews(JSON.parse(storedReviews));
-      }
-    } catch (e) {
-      console.error("Failed to load custom reviews from LocalStorage.", e);
-    }
   }, []);
 
   const saveWishlist = (updated) => {
@@ -207,14 +124,7 @@ export default function App() {
     }
   };
 
-  const saveCustomReviews = (updated) => {
-    setCustomReviews(updated);
-    try {
-      localStorage.setItem('peakplanner_custom_reviews', JSON.stringify(updated));
-    } catch (e) {
-      console.error("Failed to save custom reviews to LocalStorage.", e);
-    }
-  };
+
 
   // Sync random quote whenever active hike changes
   useEffect(() => {
@@ -303,36 +213,7 @@ export default function App() {
     setTimeout(() => setSavingComment(false), 1000);
   };
 
-  const handleAddReview = (e) => {
-    e.preventDefault();
-    if (!reviewName.trim() || !reviewComment.trim()) {
-      showToast("Name and comment are required!", true);
-      return;
-    }
-    
-    const newReview = {
-      name: reviewName.trim(),
-      rating: Number(reviewRating),
-      comment: reviewComment.trim(),
-      date: new Date().toLocaleDateString('en-US', {
-        month: 'long', day: 'numeric', year: 'numeric'
-      })
-    };
 
-    const updated = {
-      ...customReviews,
-      [activeHike.id]: [
-        ...(customReviews[activeHike.id] || []),
-        newReview
-      ]
-    };
-
-    saveCustomReviews(updated);
-    setReviewName("");
-    setReviewComment("");
-    setReviewRating(5);
-    showToast("Review submitted successfully!");
-  };
 
   const handleRemoveFromWishlist = (hikeId) => {
     const item = wishlist[hikeId] || {};
@@ -1336,72 +1217,63 @@ export default function App() {
                         </div>
                       )}
 
-                      {/* Trail Reviews & Community Reports */}
-                      <div className="space-y-3">
-                        <h4 className="text-xs font-mono text-monokai-yellow uppercase flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4 text-monokai-blue" />
-                          <span>Trail Reviews &amp; Community Reports</span>
-                        </h4>
-
-                        <div className="space-y-3">
-                          {[...getMockReviewsForHike(activeHike), ...(customReviews[activeHike.id] || [])].map((review, i) => (
-                            <div key={i} className="bg-monokai-card border border-monokai-hover rounded-xl p-3.5 space-y-2">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-monokai-blue to-monokai-purple flex items-center justify-center text-xs font-bold text-monokai-deep shrink-0">
-                                    {review.name.charAt(0)}
-                                  </div>
-                                  <span className="text-xs font-bold text-monokai-text">{review.name}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex">
-                                    {Array.from({ length: review.rating }).map((_, s) => (
-                                      <Star key={s} className="w-3.5 h-3.5 fill-monokai-yellow stroke-none" />
-                                    ))}
-                                  </div>
-                                  <span className="text-[9px] font-mono text-monokai-dim">{review.date}</span>
-                                </div>
-                              </div>
-                              <p className="text-xs text-monokai-dim leading-relaxed">{review.comment}</p>
+                      {/* Windy.com Live Weather Integration */}
+                      <div className="space-y-4 bg-monokai-card border border-monokai-hover rounded-xl p-4 md:p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <Wind className="w-5 h-5 text-monokai-blue animate-pulse" />
+                            <div>
+                              <h4 className="text-sm font-semibold text-monokai-text leading-tight">Windy.com Real-time Weather</h4>
+                              <p className="text-[10px] font-mono text-monokai-dim uppercase tracking-wider">Live conditions at trailhead & peak</p>
                             </div>
-                          ))}
+                          </div>
+                          <a
+                            href={`https://www.windy.com/?${activeHike.coords[0]},${activeHike.coords[1]},11`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] font-mono text-monokai-yellow hover:text-monokai-yellow/80 bg-monokai-deep px-3 py-1.5 rounded-lg border border-monokai-hover transition self-start sm:self-auto"
+                          >
+                            <span>Open on Windy</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
                         </div>
 
-                        {/* Add Your Review Form */}
-                        <form onSubmit={handleAddReview} className="bg-monokai-deep border border-monokai-hover rounded-xl p-4 space-y-3">
-                          <p className="text-[10px] font-mono text-monokai-dim uppercase tracking-wider">Share Your Trail Experience</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <input
-                              type="text"
-                              placeholder="Your name"
-                              value={reviewName}
-                              onChange={e => setReviewName(e.target.value)}
-                              className="bg-monokai-bg text-monokai-text text-xs rounded-lg border border-monokai-hover px-3 py-2 focus:outline-none focus:ring-1 focus:ring-monokai-yellow"
-                            />
-                            <select
-                              value={reviewRating}
-                              onChange={e => setReviewRating(Number(e.target.value))}
-                              className="bg-monokai-bg text-monokai-text text-xs rounded-lg border border-monokai-hover px-3 py-2 focus:outline-none focus:ring-1 focus:ring-monokai-yellow"
-                            >
-                              <option value={5}>&#9733;&#9733;&#9733;&#9733;&#9733; Excellent</option>
-                              <option value={4}>&#9733;&#9733;&#9733;&#9733; Great</option>
-                              <option value={3}>&#9733;&#9733;&#9733; Good</option>
-                              <option value={2}>&#9733;&#9733; Fair</option>
-                              <option value={1}>&#9733; Poor</option>
-                            </select>
-                          </div>
-                          <textarea
-                            placeholder="Describe trail conditions, difficulty, highlights..."
-                            value={reviewComment}
-                            onChange={e => setReviewComment(e.target.value)}
-                            rows={2}
-                            className="w-full bg-monokai-bg text-monokai-text text-xs rounded-lg border border-monokai-hover px-3 py-2 focus:outline-none focus:ring-1 focus:ring-monokai-yellow resize-none"
+                        {/* Layer selection tabs */}
+                        <div className="grid grid-cols-4 gap-1 p-1 bg-monokai-deep rounded-lg border border-monokai-hover">
+                          {[
+                            { id: 'wind', label: 'Wind', icon: Wind },
+                            { id: 'clouds', label: 'Clouds', icon: Cloud },
+                            { id: 'rain', label: 'Rain', icon: CloudRain },
+                            { id: 'temp', label: 'Temp', icon: Thermometer },
+                          ].map(layer => {
+                            const IconComp = layer.icon;
+                            const isSelected = windyOverlay === layer.id;
+                            return (
+                              <button
+                                key={layer.id}
+                                onClick={() => setWindyOverlay(layer.id)}
+                                className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition duration-150 ${
+                                  isSelected
+                                    ? 'bg-monokai-hover border border-monokai-yellow/30 text-monokai-yellow font-medium'
+                                    : 'text-monokai-dim hover:text-monokai-text hover:bg-monokai-hover/50'
+                                }`}
+                              >
+                                <IconComp className="w-4 h-4 mb-1 shrink-0" />
+                                <span className="text-[10px] font-mono">{layer.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Interactive Windy Map Frame */}
+                        <div className="relative w-full h-[320px] rounded-xl overflow-hidden border border-monokai-hover bg-monokai-deep shadow-inner">
+                          <iframe
+                            src={`https://embed.windy.com/embed2.html?lat=${activeHike.coords[0]}&lon=${activeHike.coords[1]}&detailLat=${activeHike.coords[0]}&detailLon=${activeHike.coords[1]}&zoom=11&level=surface&overlay=${windyOverlay}&menu=&message=true&marker=true&forecast=12`}
+                            className="absolute inset-0 w-full h-full border-none"
+                            title="Windy.com Live Weather Map"
+                            allowFullScreen
                           />
-                          <button type="submit" className="w-full bg-monokai-blue/20 hover:bg-monokai-blue/30 border border-monokai-blue/40 text-monokai-blue text-xs font-semibold py-2 rounded-lg transition flex items-center justify-center gap-1.5">
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            Submit Review
-                          </button>
-                        </form>
+                        </div>
                       </div>
                     </div>
 
