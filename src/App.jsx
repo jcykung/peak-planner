@@ -456,7 +456,7 @@ export default function App() {
   const plannedCount = Object.values(wishlist).filter(x => x.wished).length;
   const completedCount = Object.values(wishlist).filter(x => x.completed).length;
 
-  const activeWeather = activeHike ? getElevationCorrectedWeather(activeHike, planDate) : null;
+  const activeWeather = activeHike ? getElevationCorrectedWeather(activeHike, planDate, planDeparture) : null;
   const activeTimeline = activeHike ? calculateTimelineSplits({
     duration: activeHike.duration,
     planPace,
@@ -1174,7 +1174,7 @@ export default function App() {
                   }`}
                 >
                   <CalendarRange className="w-4 h-4 text-monokai-purple" />
-                  <span>Planner & Weather Module</span>
+                  <span>Planner</span>
                 </button>
               </div>
 
@@ -1302,7 +1302,7 @@ export default function App() {
                 </div>
               )}
 
-              {/* Tab Content: Planner & Weather Module */}
+              {/* Tab Content: Planner */}
               {activePlanningTab === "planner" && (
                 <div className="p-4 md:p-6 space-y-6">
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1430,13 +1430,19 @@ export default function App() {
                       
                       {/* Subalpine Weather details */}
                       {activeWeather && (
-                        <div className="bg-monokai-card p-5 rounded-2xl border border-monokai-hover bg-gradient-to-br from-monokai-card to-monokai-deep">
-                          <h4 className="text-[11px] font-mono text-monokai-dim uppercase tracking-wider mb-3">
-                            Elevation-Aware Subalpine Weather
-                          </h4>
+                        <div className="bg-monokai-card p-5 rounded-2xl border border-monokai-hover bg-gradient-to-br from-monokai-card to-monokai-deep space-y-4">
+                          <div className="flex items-center justify-between border-b border-monokai-hover/50 pb-2">
+                            <h4 className="text-[11px] font-mono text-monokai-dim uppercase tracking-wider">
+                              Windy.com GFS Forecast Details
+                            </h4>
+                            <span className="text-[10px] font-mono text-monokai-blue bg-monokai-blue/10 px-2 py-0.5 rounded border border-monokai-blue/20">
+                              GFS Model
+                            </span>
+                          </div>
+
                           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                            <div className={`md:col-span-4 flex items-center space-x-3 border-b md:border-b-0 md:border-r border-monokai-hover/50 pb-3 md:pb-0 pr-0 md:pr-4`}>
-                              <div className={`p-4 rounded-xl flex items-center justify-center ${activeWeather.colorClass}`}>
+                            <div className="md:col-span-4 flex items-center space-x-3 border-b md:border-b-0 md:border-r border-monokai-hover/50 pb-3 md:pb-0 pr-0 md:pr-4">
+                              <div className={`p-4 rounded-xl flex items-center justify-center ${activeWeather.colorClass} shrink-0`}>
                                 {activeWeather.icon === 'snowflake' && <Snowflake className="w-10 h-10" />}
                                 {activeWeather.icon === 'sun' && <Sun className="w-10 h-10" />}
                                 {activeWeather.icon === 'cloud-rain' && <CloudRain className="w-10 h-10" />}
@@ -1448,19 +1454,37 @@ export default function App() {
                                 <span className="block text-[11px] font-mono text-monokai-dim uppercase mt-0.5">{activeWeather.conditions}</span>
                               </div>
                             </div>
-                            <div className="md:col-span-8 space-y-1.5">
-                              <p className="text-xs text-monokai-dim flex justify-between">
-                                <span>Subalpine Temp Drop (vs city):</span>
-                                <span className="font-mono text-monokai-pink font-semibold">-{activeWeather.lapse}°C Peak Offset</span>
-                              </p>
-                              <p className="text-xs text-monokai-dim flex justify-between">
-                                <span>Simulated Altitude Wind gust:</span>
-                                <span className="font-mono text-monokai-blue font-semibold">{activeWeather.wind} km/h</span>
-                              </p>
-                              <div className={`text-xs p-2.5 rounded-lg mt-2 font-medium ${activeWeather.colorClass}`}>
-                                {activeWeather.advice}
+
+                            <div className="md:col-span-8 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                                <span>Wind Speed:</span>
+                                <span className="font-mono text-monokai-blue font-semibold">{activeWeather.windSpeed} kt ({activeWeather.windDir})</span>
+                              </div>
+                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                                <span>Wind Gusts:</span>
+                                <span className="font-mono text-monokai-blue font-semibold">{activeWeather.windGust} kt</span>
+                              </div>
+                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                                <span>Cloud Cover:</span>
+                                <span className="font-mono text-monokai-yellow font-semibold">{activeWeather.clouds}%</span>
+                              </div>
+                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                                <span>UV Index:</span>
+                                <span className="font-mono text-monokai-orange font-semibold">{activeWeather.uv}</span>
+                              </div>
+                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                                <span>Air Quality (AQI):</span>
+                                <span className="font-mono text-monokai-purple font-semibold">{activeWeather.aqi}</span>
+                              </div>
+                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                                <span>Humidity:</span>
+                                <span className="font-mono text-monokai-dim font-semibold">{activeWeather.humidity}%</span>
                               </div>
                             </div>
+                          </div>
+
+                          <div className={`text-xs p-2.5 rounded-lg font-medium ${activeWeather.colorClass}`}>
+                            {activeWeather.advice}
                           </div>
                         </div>
                       )}
@@ -1641,6 +1665,51 @@ export default function App() {
               <div className="border border-purple-200 bg-purple-50 p-4 rounded-2xl text-center shadow-sm">
                 <span className="block text-[9px] uppercase font-bold text-purple-600 tracking-wider mb-1">Driving Distance</span>
                 <span className="text-sm font-extrabold text-gray-900 block">{activeHike.distFromVan} Mins</span>
+              </div>
+            </div>
+
+            {/* Windy.com Weather Forecast section in printout */}
+            <div className="border border-gray-200 p-6 rounded-2xl space-y-4 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-black uppercase tracking-wider text-gray-900">
+                  Windy.com Live Weather Forecast (GFS Model)
+                </h3>
+                <span className="font-mono text-xs text-gray-500">
+                  Forecast for {formattedPrintDate()} @ {formatDecimalHour(planDeparture)}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Temperature</span>
+                  <span className="text-base font-extrabold text-gray-900">{activeWeather.temp}°C</span>
+                  <span className="block text-[9px] text-gray-400 mt-0.5">({activeWeather.conditions})</span>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Winds &amp; Gusts</span>
+                  <span className="text-sm font-extrabold text-gray-900">
+                    {activeWeather.windSpeed} kt ({activeWeather.windDir})
+                  </span>
+                  <span className="block text-[9px] text-gray-400 mt-0.5">Gusts to {activeWeather.windGust} kt</span>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="block text-[9px] uppercase font-bold text-gray-500 mb-1">Clouds &amp; Humidity</span>
+                  <span className="text-sm font-extrabold text-gray-900">
+                    Clouds: {activeWeather.clouds}%
+                  </span>
+                  <span className="block text-[9px] text-gray-400 mt-0.5">Humidity: {activeWeather.humidity}%</span>
+                </div>
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                  <span className="block text-[9px] uppercase font-bold text-gray-500 mb-1">UV &amp; Air Quality</span>
+                  <span className="text-sm font-extrabold text-gray-900">
+                    UV: {activeWeather.uv} | AQI: {activeWeather.aqi}
+                  </span>
+                  <span className="block text-[9px] text-gray-400 mt-0.5">
+                    {activeWeather.uv >= 8 ? "Very High UV" : activeWeather.uv >= 6 ? "High UV" : "Moderate/Low UV"}
+                  </span>
+                </div>
+              </div>
+              <div className="text-xs p-3 rounded-xl border border-orange-100 bg-orange-50/50 text-orange-900 font-medium">
+                {activeWeather.advice}
               </div>
             </div>
 
