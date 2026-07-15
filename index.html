@@ -2,16 +2,17 @@
 <html lang="en" class="h-full">
 
 <head>
-    <!-- Base64 Inline SVG Favicon for reliable local file:// loading in all browsers -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+CiAgICA8ZGVmcz4KICAgICAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxvZ28tZ3JhZCIgeDE9IjAlIiB5MT0iMTAwJSIgeDI9IjEwMCUiIHkyPSIwJSI+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZjYxODgiIC8+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2ZmZDg2NiIgLz4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgogICAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNsb2dvLWdyYWQpIiAvPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNCwgNCkiPgogICAgICAgIDxwYXRoIGQ9Im04IDMgNCA4IDUtNSA1IDE1SDJMOCAzeiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjIxZjIyIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiAvPgogICAgICAgIDxwYXRoIGQ9Ik00LjE0IDE1LjA4Yy43Ny0uNzcgMi4wMi0uNzcgMi43OCAwbC40NC40NGEyIDIgMCAwIDAgMi43OCAwbC40NC0uNDRhMiAyIDAgMCAxIDIuNzggMGwuNDQuNDRhMiAyIDAgMCAwIDIuNzggMGwuNDQtLjQ0Yy43Ny0uNzcgMi4wMi0uNzcgMi43OCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiMyMjFmMjIiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIC8+CiAgICA8L2c+Cjwvc3ZnPgo=">
-    <!-- Fallback standard relative paths -->
-    <link rel="icon" type="image/x-icon" href="public/favicon.ico">
-    <link rel="apple-touch-icon" href="public/apple-touch-icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PeakPlanner - Vancouver Trail Guide & Planner</title>
     <!-- Tailwind CSS with CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Base64 Inline SVG Favicon for reliable local file:// loading in all browsers -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiIgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSI+CiAgICA8ZGVmcz4KICAgICAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImxvZ28tZ3JhZCIgeDE9IjAlIiB5MT0iMTAwJSIgeDI9IjEwMCUiIHkyPSIwJSI+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMCUiIHN0b3AtY29sb3I9IiNmZjYxODgiIC8+CiAgICAgICAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2ZmZDg2NiIgLz4KICAgICAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPC9kZWZzPgogICAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNsb2dvLWdyYWQpIiAvPgogICAgPGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNCwgNCkiPgogICAgICAgIDxwYXRoIGQ9Im04IDMgNCA4IDUtNSA1IDE1SDJMOCAzeiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjMjIxZjIyIiBzdHJva2Utd2lkdGg9IjIuMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiAvPgogICAgICAgIDxwYXRoIGQ9Ik00LjE0IDE1LjA4Yy43Ny0uNzcgMi4wMi0uNzcgMi43OCAwbC40NC40NGEyIDIgMCAwIDAgMi43OCAwbC40NC0uNDRhMiAyIDAgMCAxIDIuNzggMGwuNDQuNDRhMiAyIDAgMCAwIDIuNzggMGwuNDQtLjQ0Yy43Ny0uNzcgMi4wMi0uNzcgMi43OCAwIiBmaWxsPSJub25lIiBzdHJva2U9IiMyMjFmMjIiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIC8+CiAgICA8L2c+Cjwvc3ZnPgo=">
+    <!-- Fallback standard relative paths -->
+    <link rel="icon" type="image/x-icon" href="public/favicon.ico">
+    <link rel="apple-touch-icon" href="public/apple-touch-icon.png">
     <!-- Leaflet Map CSS and JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -2289,8 +2290,8 @@ ${weatherText}
 
                 const card = document.createElement('div');
                 card.className = `p-3 rounded-xl border transition flex items-center space-x-2.5 group relative ${isSelected
-                    ? 'bg-monokai-active border-monokai-yellow text-monokai-text'
-                    : 'bg-monokai-card border-monokai-hover hover:bg-monokai-hover text-monokai-dim hover:text-monokai-text'
+                        ? 'bg-monokai-active border-monokai-yellow text-monokai-text'
+                        : 'bg-monokai-card border-monokai-hover hover:bg-monokai-hover text-monokai-dim hover:text-monokai-text'
                     }`;
                 card.innerHTML = `
                     <div class="flex items-center shrink-0 pr-0.5 no-print">
