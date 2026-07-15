@@ -81,7 +81,6 @@ export default function App() {
   
   // Tab states
   const [activeSidebarTab, setActiveSidebarTab] = useState("browse"); // "browse" or "wishlist"
-  const [activePlanningTab, setActivePlanningTab] = useState("overview"); // "overview" or "planner"
   const [activeMobileTab, setActiveMobileTab] = useState("list"); // "list", "wish", "plan"
   
   // Trip parameters state
@@ -348,6 +347,16 @@ export default function App() {
       dateStr: planDate
     });
 
+    const wx = getElevationCorrectedWeather(activeHike, planDate, planDeparture);
+    const weatherText = wx ? `
+🌤 WEATHER FORECAST (GFS Model):
+- Temperature: ${wx.temp}°C (${wx.conditions})
+- Winds: ${wx.windSpeed} kt (${wx.windDir}) with gusts to ${wx.windGust} kt
+- Cloud Cover: ${wx.clouds}% | Humidity: ${wx.humidity}%
+- UV Index: ${wx.uv} | AQI: ${wx.aqi}
+- Conditions Alert: ${wx.advice}
+` : '';
+
     const textBlock = `🌲 TRIP PLAN: ${activeHike.name.toUpperCase()} 🌲
 📅 Target Date: ${planDate}
 🚗 Distance from Vancouver: ${activeHike.distFromVan} mins drive
@@ -360,7 +369,7 @@ export default function App() {
 - Start Descending: ${formatDecimalHour(splits.timeDescent)}
 - Return to Vehicles: ${formatDecimalHour(splits.timeReturn)}
 * Parking Area: ${activeHike.parking}
-
+${weatherText}
 💬 TRAIL INSPIRATION:
 "${currentQuote}"
 
@@ -817,7 +826,6 @@ export default function App() {
                         className="flex-1 min-w-0 flex space-x-3 cursor-pointer"
                         onClick={() => {
                           setActiveHike(hike);
-                          setActivePlanningTab("overview");
                           // Auto shift on mobile to planner tab
                           if (window.innerWidth < 1024) {
                             setActiveMobileTab("plan");
@@ -919,7 +927,6 @@ export default function App() {
                           className="flex-1 min-w-0 flex space-x-3 items-start cursor-pointer"
                           onClick={() => {
                             setActiveHike(hike);
-                            setActivePlanningTab("overview");
                             if (window.innerWidth < 1024) {
                               setActiveMobileTab("plan");
                             }
@@ -1181,163 +1188,13 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Tabbed Layout Header */}
-              <div className="border-b border-monokai-hover px-6 flex space-x-6 text-sm font-semibold">
-                <button 
-                  onClick={() => setActivePlanningTab("overview")}
-                  className={`py-4 flex items-center gap-2 border-b-2 transition focus:outline-none ${
-                    activePlanningTab === "overview" 
-                      ? "text-monokai-yellow border-monokai-yellow" 
-                      : "text-monokai-dim hover:text-monokai-text border-transparent"
-                  }`}
-                >
-                  <BookOpen className="w-4 h-4" />
-                  <span>Route & Navigation</span>
-                </button>
-                <button 
-                  onClick={() => setActivePlanningTab("planner")}
-                  className={`py-4 flex items-center gap-2 border-b-2 transition focus:outline-none ${
-                    activePlanningTab === "planner" 
-                      ? "text-monokai-yellow border-monokai-yellow" 
-                      : "text-monokai-dim hover:text-monokai-text border-transparent"
-                  }`}
-                >
-                  <CalendarRange className="w-4 h-4 text-monokai-purple" />
-                  <span>Planner</span>
-                </button>
-              </div>
-
-              {/* Tab Content: Route & Navigation */}
-              {activePlanningTab === "overview" && (
-                <div className="p-4 md:p-6 space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Left: Description walkthrough */}
-                    <div className="lg:col-span-7 space-y-6">
-                      <div>
-                        <h4 className="text-xs font-mono text-monokai-yellow uppercase mb-2">Trail Route Walkthrough</h4>
-                        <p className="text-monokai-text/95 leading-relaxed text-sm bg-monokai-card p-4 rounded-xl border border-monokai-hover">
-                          {activeHike.instructions}
-                        </p>
-                      </div>
-
-                      <div className="bg-monokai-card p-4 rounded-xl border border-monokai-hover space-y-3">
-                        <div className="flex items-center space-x-2 text-monokai-orange">
-                          <Info className="w-4 h-4" />
-                          <span className="text-xs font-mono uppercase">Parking & Gathering Details</span>
-                        </div>
-                        <div className="space-y-2 text-sm leading-relaxed">
-                          <p>
-                            <strong className="text-monokai-text">Where to Park:</strong>{" "}
-                            <span className="text-monokai-dim">{activeHike.parking}</span>
-                          </p>
-                          <p>
-                            <strong className="text-monokai-text">Suggested Meeting Point:</strong>{" "}
-                            <span className="text-monokai-dim">{activeHike.meetingPoint}</span>
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Hiking Quote Banner */}
-                      {currentQuote && (
-                        <div className="bg-gradient-to-r from-monokai-deep to-monokai-card border border-monokai-yellow/30 rounded-xl p-4 flex items-start gap-3">
-                          <span className="text-2xl text-monokai-yellow/70 leading-none font-serif shrink-0 select-none">&ldquo;</span>
-                          <p className="text-sm italic text-monokai-text/90 leading-relaxed flex-1">{currentQuote}</p>
-                          <span className="text-2xl text-monokai-yellow/70 leading-none font-serif shrink-0 self-end select-none">&rdquo;</span>
-                        </div>
-                      )}
-
-                      {/* Windy.com Live Weather Integration */}
-                      <div className="space-y-4 bg-monokai-card border border-monokai-hover rounded-xl p-4 md:p-5">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <Wind className="w-5 h-5 text-monokai-blue animate-pulse" />
-                            <div>
-                              <h4 className="text-sm font-semibold text-monokai-text leading-tight">Windy.com Real-time Weather</h4>
-                              <p className="text-[10px] font-mono text-monokai-dim uppercase tracking-wider">Live conditions at trailhead & peak</p>
-                            </div>
-                          </div>
-                          <a
-                            href={`https://www.windy.com/?${activeHike.coords[0]},${activeHike.coords[1]},11`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-mono text-monokai-yellow hover:text-monokai-yellow/80 bg-monokai-deep px-3 py-1.5 rounded-lg border border-monokai-hover transition self-start sm:self-auto"
-                          >
-                            <span>Open on Windy</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-
-                        {/* Layer selection tabs */}
-                        <div className="grid grid-cols-4 gap-1 p-1 bg-monokai-deep rounded-lg border border-monokai-hover">
-                          {[
-                            { id: 'wind', label: 'Wind', icon: Wind },
-                            { id: 'clouds', label: 'Clouds', icon: Cloud },
-                            { id: 'rain', label: 'Rain', icon: CloudRain },
-                            { id: 'temp', label: 'Temp', icon: Thermometer },
-                          ].map(layer => {
-                            const IconComp = layer.icon;
-                            const isSelected = windyOverlay === layer.id;
-                            return (
-                              <button
-                                key={layer.id}
-                                onClick={() => setWindyOverlay(layer.id)}
-                                className={`flex flex-col items-center justify-center py-2 px-1 rounded-md transition duration-150 ${
-                                  isSelected
-                                    ? 'bg-monokai-hover border border-monokai-yellow/30 text-monokai-yellow font-medium'
-                                    : 'text-monokai-dim hover:text-monokai-text hover:bg-monokai-hover/50'
-                                }`}
-                              >
-                                <IconComp className="w-4 h-4 mb-1 shrink-0" />
-                                <span className="text-[10px] font-mono">{layer.label}</span>
-                              </button>
-                            );
-                          })}
-                        </div>
-
-                        {/* Interactive Windy Map Frame */}
-                        <div className="relative w-full h-[320px] rounded-xl overflow-hidden border border-monokai-hover bg-monokai-deep shadow-inner">
-                          <iframe
-                            key={`${activeHike.id}-${planDate}-${debouncedHoursOffset}-${windyOverlay}`}
-                            src={`https://embed.windy.com/embed2.html?lat=${activeHike.coords[0]}&lon=${activeHike.coords[1]}&detailLat=${activeHike.coords[0]}&detailLon=${activeHike.coords[1]}&zoom=11&level=surface&overlay=${windyOverlay}&menu=&message=true&marker=true&calendar=${debouncedHoursOffset}&forecast=12`}
-                            className="absolute inset-0 w-full h-full border-none"
-                            title="Windy.com Live Weather Map"
-                            allowFullScreen
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right: Map coordinates */}
-                    <div className="lg:col-span-5 flex flex-col space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-mono text-monokai-dim uppercase">Trailhead Map Coordinates</span>
-                        <span className="text-[11px] font-mono text-monokai-blue bg-monokai-deep px-2.5 py-1 rounded border border-monokai-hover flex items-center gap-1">
-                          <MapPin className="w-3.5 h-3.5 text-monokai-blue" />
-                          {activeHike.coords[0].toFixed(4)}, {activeHike.coords[1].toFixed(4)}
-                        </span>
-                      </div>
-                      
-                      <div className="h-[280px] md:h-[350px]">
-                        <HikeMap 
-                          lat={activeHike.coords[0]} 
-                          lng={activeHike.coords[1]} 
-                          label={activeHike.name} 
-                        />
-                      </div>
-                      <span className="text-[10px] font-mono text-monokai-dim text-right leading-none block">
-                        Interact with the map to assess surrounding road accesses
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Tab Content: Planner */}
-              {activePlanningTab === "planner" && (
-                <div className="p-4 md:p-6 space-y-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                    {/* Interactive controls */}
-                    <div className="lg:col-span-5 bg-monokai-card p-4 md:p-5 rounded-2xl border border-monokai-hover space-y-5">
+              {/* Combined Route & Planner Details */}
+              <div className="p-4 md:p-6 space-y-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  {/* Left Column: Trip Parameters, Route Walkthrough & Gathering Info */}
+                  <div className="lg:col-span-5 space-y-6">
+                    {/* Interactive controls (Adjust Trip Parameters) */}
+                    <div className="bg-monokai-card p-4 md:p-5 rounded-2xl border border-monokai-hover space-y-5">
                       <h4 className="text-xs font-mono text-monokai-yellow uppercase tracking-wider border-b border-monokai-hover pb-2 flex items-center justify-between">
                         <span>Adjust Trip Parameters</span>
                         <Sliders className="w-4 h-4 text-monokai-dim" />
@@ -1455,176 +1312,287 @@ export default function App() {
                       </div>
                     </div>
 
-                    {/* Weather & Timeline */}
-                    <div className="lg:col-span-7 space-y-6">
-                      
-                      {/* Subalpine Weather details */}
-                      {activeWeather && (
-                        <div className="bg-monokai-card p-5 rounded-2xl border border-monokai-hover bg-gradient-to-br from-monokai-card to-monokai-deep space-y-4">
-                          <div className="flex items-center justify-between border-b border-monokai-hover/50 pb-2">
-                            <h4 className="text-[11px] font-mono text-monokai-dim uppercase tracking-wider">
-                              Windy.com GFS Forecast Details
-                            </h4>
-                            <span className="text-[10px] font-mono text-monokai-blue bg-monokai-blue/10 px-2 py-0.5 rounded border border-monokai-blue/20">
-                              GFS Model
-                            </span>
-                          </div>
+                    {/* Trail Route Walkthrough */}
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="text-xs font-mono text-monokai-yellow uppercase mb-2">Trail Route Walkthrough</h4>
+                        <p className="text-monokai-text/95 leading-relaxed text-sm bg-monokai-card p-4 rounded-xl border border-monokai-hover">
+                          {activeHike.instructions}
+                        </p>
+                      </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-                            <div className="md:col-span-4 flex items-center space-x-3 border-b md:border-b-0 md:border-r border-monokai-hover/50 pb-3 md:pb-0 pr-0 md:pr-4">
-                              <div className={`p-4 rounded-xl flex items-center justify-center ${activeWeather.colorClass} shrink-0`}>
-                                {activeWeather.icon === 'snowflake' && <Snowflake className="w-10 h-10" />}
-                                {activeWeather.icon === 'sun' && <Sun className="w-10 h-10" />}
-                                {activeWeather.icon === 'cloud-rain' && <CloudRain className="w-10 h-10" />}
-                                {activeWeather.icon === 'cloud-snow' && <CloudSnow className="w-10 h-10" />}
-                                {activeWeather.icon === 'cloud' && <Cloud className="w-10 h-10" />}
-                              </div>
-                              <div>
-                                <span className="text-3xl font-extrabold text-monokai-text">{activeWeather.temp}°C</span>
-                                <span className="block text-[11px] font-mono text-monokai-dim uppercase mt-0.5">{activeWeather.conditions}</span>
-                              </div>
-                            </div>
-
-                            <div className="md:col-span-8 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
-                                <span>Wind Speed:</span>
-                                <span className="font-mono text-monokai-blue font-semibold">{activeWeather.windSpeed} kt ({activeWeather.windDir})</span>
-                              </div>
-                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
-                                <span>Wind Gusts:</span>
-                                <span className="font-mono text-monokai-blue font-semibold">{activeWeather.windGust} kt</span>
-                              </div>
-                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
-                                <span>Cloud Cover:</span>
-                                <span className="font-mono text-monokai-yellow font-semibold">{activeWeather.clouds}%</span>
-                              </div>
-                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
-                                <span>UV Index:</span>
-                                <span className="font-mono text-monokai-orange font-semibold">{activeWeather.uv}</span>
-                              </div>
-                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
-                                <span>Air Quality (AQI):</span>
-                                <span className="font-mono text-monokai-purple font-semibold">{activeWeather.aqi}</span>
-                              </div>
-                              <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
-                                <span>Humidity:</span>
-                                <span className="font-mono text-monokai-dim font-semibold">{activeWeather.humidity}%</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className={`text-xs p-2.5 rounded-lg font-medium ${activeWeather.colorClass}`}>
-                            {activeWeather.advice}
-                          </div>
+                      {/* Parking & Gathering Details */}
+                      <div className="bg-monokai-card p-4 rounded-xl border border-monokai-hover space-y-3">
+                        <div className="flex items-center space-x-2 text-monokai-orange">
+                          <Info className="w-4 h-4" />
+                          <span className="text-xs font-mono uppercase">Parking & Gathering Details</span>
                         </div>
-                      )}
+                        <div className="space-y-2 text-sm leading-relaxed">
+                          <p>
+                            <strong className="text-monokai-text">Where to Park:</strong>{" "}
+                            <span className="text-monokai-dim">{activeHike.parking}</span>
+                          </p>
+                          <p>
+                            <strong className="text-monokai-text">Suggested Meeting Point:</strong>{" "}
+                            <span className="text-monokai-dim">{activeHike.meetingPoint}</span>
+                          </p>
+                        </div>
+                      </div>
 
-                      {/* Vertical timeline */}
-                      {activeTimeline && (
-                        <div className="bg-monokai-card p-5 rounded-2xl border border-monokai-hover space-y-4">
-                          <div className="flex items-center justify-between">
-                            <h4 className="text-xs font-mono text-monokai-dim uppercase tracking-wider">Dynamic Timeline Schedule</h4>
-                            
-                            {/* Sunset alert pill */}
-                            {activeTimeline.isAfterSunset && (
-                              <div id="sunset-alert-pill" className="flex items-center space-x-1.5 bg-monokai-pink/10 border border-monokai-pink/30 px-3 py-1 rounded-full animate-pulse">
-                                <span className="w-2 h-2 rounded-full bg-monokai-pink"></span>
-                                <span className="text-[10px] font-mono text-monokai-pink uppercase font-semibold">Sunset Alert</span>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-monokai-hover">
-                            {/* Step 1 */}
-                            <div className="flex items-start space-x-4 relative">
-                              <div className="w-7 h-7 rounded-full bg-monokai-blue flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
-                                <ParkingCircle className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
-                              </div>
-                              <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
-                                <div>
-                                  <span className="text-xs font-semibold text-monokai-text">Depart Parking Lot & Start Climb</span>
-                                  <span className="block text-[10px] text-monokai-dim font-mono">Verify equipment checklist and water supply</span>
-                                </div>
-                                <span className="text-sm font-mono text-monokai-blue font-bold shrink-0 pl-2">
-                                  {formatDecimalHour(activeTimeline.timeDepart)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Step 2 */}
-                            <div className="flex items-start space-x-4 relative">
-                              <div className="w-7 h-7 rounded-full bg-monokai-pink flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
-                                <Mountain className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
-                              </div>
-                              <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
-                                <div>
-                                  <span className="text-xs font-semibold text-monokai-text">Arrive at Scenic Peak / Viewpoint</span>
-                                  <span className="block text-[10px] text-monokai-dim font-mono">
-                                    Climb Time: {formatDurationText(activeTimeline.ascentDuration)}
-                                  </span>
-                                </div>
-                                <span className="text-sm font-mono text-monokai-pink font-bold shrink-0 pl-2">
-                                  {formatDecimalHour(activeTimeline.timeSummit)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Step 3 */}
-                            <div className="flex items-start space-x-4 relative">
-                              <div className="w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
-                                <Clock className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
-                              </div>
-                              <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
-                                <div>
-                                  <span className="text-xs font-semibold text-monokai-text">Begin Descending Route</span>
-                                  <span className="block text-[10px] text-monokai-dim font-mono">
-                                    Linger: {planLinger} mins at peak
-                                  </span>
-                                </div>
-                                <span className="text-sm font-mono text-monokai-purple font-bold shrink-0 pl-2">
-                                  {formatDecimalHour(activeTimeline.timeDescent)}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Step 4 */}
-                            <div className="flex items-start space-x-4 relative">
-                              <div className="w-7 h-7 rounded-full bg-monokai-green flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
-                                <Check className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
-                              </div>
-                              <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
-                                <div>
-                                  <span className="text-xs font-semibold text-monokai-text">Complete Route to Vehicles</span>
-                                  <span className="block text-[10px] text-monokai-dim font-mono">
-                                    Downhill: {formatDurationText(activeTimeline.descentDuration)}
-                                  </span>
-                                </div>
-                                <span className="text-sm font-mono text-monokai-green font-bold shrink-0 pl-2">
-                                  {formatDecimalHour(activeTimeline.timeReturn)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Daylight Sunset Warnings Panel */}
-                          {activeTimeline.isAfterSunset && (
-                            <div className="bg-monokai-pink/10 border border-monokai-pink/35 p-4 rounded-xl flex items-start space-x-3 text-xs leading-relaxed text-monokai-pink font-semibold">
-                              <Info className="w-5 h-5 shrink-0 mt-0.5" />
-                              <div className="space-y-1">
-                                <p className="uppercase font-extrabold tracking-wider">⚠️ Day Trip Nightfall Hazard Warning</p>
-                                <p>
-                                  Calculated return time matches/surpasses local astronomical sunset ({formatDecimalHour(activeTimeline.sunsetDecimal)}).
-                                  A minimum of two fully-charged headlamps are required per person. Start earlier to avoid descending in total darkness.
-                                </p>
-                              </div>
-                            </div>
-                          )}
+                      {/* Hiking Quote Banner */}
+                      {currentQuote && (
+                        <div className="bg-gradient-to-r from-monokai-deep to-monokai-card border border-monokai-yellow/30 rounded-xl p-4 flex items-start gap-3">
+                          <span className="text-2xl text-monokai-yellow/70 leading-none font-serif shrink-0 select-none">&ldquo;</span>
+                          <p className="text-sm italic text-monokai-text/90 leading-relaxed flex-1">{currentQuote}</p>
+                          <span className="text-2xl text-monokai-yellow/70 leading-none font-serif shrink-0 self-end select-none">&rdquo;</span>
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Right Column: Simulated Weather, Timeline, Maps */}
+                  <div className="lg:col-span-7 space-y-6">
+                    {/* Subalpine Weather details */}
+                    {activeWeather && (
+                      <div className="bg-monokai-card p-5 rounded-2xl border border-monokai-hover bg-gradient-to-br from-monokai-card to-monokai-deep space-y-4">
+                        <div className="flex items-center justify-between border-b border-monokai-hover/50 pb-2">
+                          <h4 className="text-[11px] font-mono text-monokai-dim uppercase tracking-wider">
+                            Windy.com GFS Forecast Details
+                          </h4>
+                          <span className="text-[10px] font-mono text-monokai-blue bg-monokai-blue/10 px-2 py-0.5 rounded border border-monokai-blue/20">
+                            GFS Model
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                          <div className="md:col-span-4 flex items-center space-x-3 border-b md:border-b-0 md:border-r border-monokai-hover/50 pb-3 md:pb-0 pr-0 md:pr-4">
+                            <div className={`p-4 rounded-xl flex items-center justify-center ${activeWeather.colorClass} shrink-0`}>
+                              {activeWeather.icon === 'snowflake' && <Snowflake className="w-10 h-10" />}
+                              {activeWeather.icon === 'sun' && <Sun className="w-10 h-10" />}
+                              {activeWeather.icon === 'cloud-rain' && <CloudRain className="w-10 h-10" />}
+                              {activeWeather.icon === 'cloud-snow' && <CloudSnow className="w-10 h-10" />}
+                              {activeWeather.icon === 'cloud' && <Cloud className="w-10 h-10" />}
+                            </div>
+                            <div>
+                              <span className="text-3xl font-extrabold text-monokai-text">{activeWeather.temp}°C</span>
+                              <span className="block text-[11px] font-mono text-monokai-dim uppercase mt-0.5">{activeWeather.conditions}</span>
+                            </div>
+                          </div>
+
+                          <div className="md:col-span-8 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                            <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                              <span>Wind Speed:</span>
+                              <span className="font-mono text-monokai-blue font-semibold">{activeWeather.windSpeed} kt ({activeWeather.windDir})</span>
+                            </div>
+                            <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                              <span>Wind Gusts:</span>
+                              <span className="font-mono text-monokai-blue font-semibold">{activeWeather.windGust} kt</span>
+                            </div>
+                            <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                              <span>Cloud Cover:</span>
+                              <span className="font-mono text-monokai-yellow font-semibold">{activeWeather.clouds}%</span>
+                            </div>
+                            <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                              <span>UV Index:</span>
+                              <span className="font-mono text-monokai-orange font-semibold">{activeWeather.uv}</span>
+                            </div>
+                            <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                              <span>Air Quality (AQI):</span>
+                              <span className="font-mono text-monokai-purple font-semibold">{activeWeather.aqi}</span>
+                            </div>
+                            <div className="flex justify-between text-monokai-dim border-b border-monokai-hover/30 pb-1">
+                              <span>Humidity:</span>
+                              <span className="font-mono text-monokai-dim font-semibold">{activeWeather.humidity}%</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={`text-xs p-2.5 rounded-lg font-medium ${activeWeather.colorClass}`}>
+                          {activeWeather.advice}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Vertical timeline */}
+                    {activeTimeline && (
+                      <div className="bg-monokai-card p-5 rounded-2xl border border-monokai-hover space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-mono text-monokai-dim uppercase tracking-wider">Dynamic Timeline Schedule</h4>
+                          {activeTimeline.isAfterSunset && (
+                            <div id="sunset-alert-pill" className="flex items-center space-x-1.5 bg-monokai-pink/10 border border-monokai-pink/30 px-3 py-1 rounded-full animate-pulse">
+                              <span className="w-2 h-2 rounded-full bg-monokai-pink"></span>
+                              <span className="text-[10px] font-mono text-monokai-pink uppercase font-semibold">Sunset Alert</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-monokai-hover">
+                          {/* Step 1 */}
+                          <div className="flex items-start space-x-4 relative">
+                            <div className="w-7 h-7 rounded-full bg-monokai-blue flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                              <ParkingCircle className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
+                            </div>
+                            <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                              <div>
+                                <span className="text-xs font-semibold text-monokai-text">Depart Parking Lot & Start Climb</span>
+                                <span className="block text-[10px] text-monokai-dim font-mono">Verify equipment checklist and water supply</span>
+                              </div>
+                              <span className="text-sm font-mono text-monokai-blue font-bold shrink-0 pl-2">
+                                {formatDecimalHour(activeTimeline.timeDepart)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Step 2 */}
+                          <div className="flex items-start space-x-4 relative">
+                            <div className="w-7 h-7 rounded-full bg-monokai-pink flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                              <Mountain className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
+                            </div>
+                            <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                              <div>
+                                <span className="text-xs font-semibold text-monokai-text">Arrive at Scenic Peak / Viewpoint</span>
+                                <span className="block text-[10px] text-monokai-dim font-mono">
+                                  Climb Time: {formatDurationText(activeTimeline.ascentDuration)}
+                                </span>
+                              </div>
+                              <span className="text-sm font-mono text-monokai-pink font-bold shrink-0 pl-2">
+                                {formatDecimalHour(activeTimeline.timeSummit)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Step 3 */}
+                          <div className="flex items-start space-x-4 relative">
+                            <div className="w-7 h-7 rounded-full bg-monokai-purple flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                              <Clock className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
+                            </div>
+                            <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                              <div>
+                                <span className="text-xs font-semibold text-monokai-text">Begin Descending Route</span>
+                                <span className="block text-[10px] text-monokai-dim font-mono">
+                                  Linger: {planLinger} mins at peak
+                                </span>
+                              </div>
+                              <span className="text-sm font-mono text-monokai-purple font-bold shrink-0 pl-2">
+                                {formatDecimalHour(activeTimeline.timeDescent)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Step 4 */}
+                          <div className="flex items-start space-x-4 relative">
+                            <div className="w-7 h-7 rounded-full bg-monokai-green flex items-center justify-center text-monokai-deep z-10 shrink-0 shadow">
+                              <Check className="w-4 h-4 text-monokai-deep stroke-[2.5]" />
+                            </div>
+                            <div className="flex-1 bg-monokai-bg p-3 rounded-xl border border-monokai-hover flex items-center justify-between">
+                              <div>
+                                <span className="text-xs font-semibold text-monokai-text">Complete Route to Vehicles</span>
+                                <span className="block text-[10px] text-monokai-dim font-mono">
+                                  Downhill: {formatDurationText(activeTimeline.descentDuration)}
+                                </span>
+                              </div>
+                              <span className="text-sm font-mono text-monokai-green font-bold shrink-0 pl-2">
+                                {formatDecimalHour(activeTimeline.timeReturn)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Daylight Sunset Warnings Panel */}
+                        {activeTimeline.isAfterSunset && (
+                          <div className="bg-monokai-pink/10 border border-monokai-pink/35 p-4 rounded-xl flex items-start space-x-3 text-xs leading-relaxed text-monokai-pink font-semibold">
+                            <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                              <p className="uppercase font-extrabold tracking-wider">⚠️ Day Trip Nightfall Hazard Warning</p>
+                              <p>
+                                Calculated return time matches/surpasses local astronomical sunset ({formatDecimalHour(activeTimeline.sunsetDecimal)}).
+                                A minimum of two fully-charged headlamps are required per person. Start earlier to avoid descending in total darkness.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Maps & Coords Subgrid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Leaflet Map Card */}
+                      <div className="bg-monokai-card p-4 rounded-xl border border-monokai-hover space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-mono text-monokai-dim uppercase">Trailhead Map Coordinates</span>
+                          <span className="text-[11px] font-mono text-monokai-blue bg-monokai-deep px-2.5 py-1 rounded border border-monokai-hover flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-monokai-blue" />
+                            {activeHike.coords[0].toFixed(4)}, {activeHike.coords[1].toFixed(4)}
+                          </span>
+                        </div>
+                        <div className="h-[280px] rounded-lg overflow-hidden border border-monokai-hover">
+                          <HikeMap 
+                            lat={activeHike.coords[0]} 
+                            lng={activeHike.coords[1]} 
+                            label={activeHike.name} 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Windy.com Live Weather Integration Map Card */}
+                      <div className="bg-monokai-card border border-monokai-hover rounded-xl p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Wind className="w-4 h-4 text-monokai-blue animate-pulse" />
+                            <span className="text-xs font-mono text-monokai-dim uppercase">Windy.com Live Weather</span>
+                          </div>
+                          <a
+                            href={`https://www.windy.com/?${activeHike.coords[0]},${activeHike.coords[1]},11`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] font-mono text-monokai-yellow hover:text-monokai-yellow/80 bg-monokai-deep px-2 py-1 rounded border border-monokai-hover transition"
+                          >
+                            <span>Open Windy</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        </div>
+
+                        {/* Layer selection tabs */}
+                        <div className="grid grid-cols-4 gap-1 p-0.5 bg-monokai-deep rounded-md border border-monokai-hover">
+                          {[
+                            { id: 'wind', label: 'Wind', icon: Wind },
+                            { id: 'clouds', label: 'Clouds', icon: Cloud },
+                            { id: 'rain', label: 'Rain', icon: CloudRain },
+                            { id: 'temp', label: 'Temp', icon: Thermometer },
+                          ].map(layer => {
+                            const IconComp = layer.icon;
+                            const isSelected = windyOverlay === layer.id;
+                            return (
+                              <button
+                                key={layer.id}
+                                onClick={() => setWindyOverlay(layer.id)}
+                                className={`flex flex-col items-center justify-center py-1 px-0.5 rounded transition duration-150 ${
+                                  isSelected
+                                    ? 'bg-monokai-hover border border-monokai-yellow/30 text-monokai-yellow font-medium'
+                                    : 'text-monokai-dim hover:text-monokai-text hover:bg-monokai-hover/50'
+                                }`}
+                              >
+                                <IconComp className="w-3.5 h-3.5 mb-0.5 shrink-0" />
+                                <span className="text-[9px] font-mono">{layer.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        <div className="relative h-[202px] rounded-lg overflow-hidden border border-monokai-hover bg-monokai-deep shadow-inner">
+                          <iframe
+                            key={`${activeHike.id}-${planDate}-${debouncedHoursOffset}-${windyOverlay}`}
+                            src={`https://embed.windy.com/embed2.html?lat=${activeHike.coords[0]}&lon=${activeHike.coords[1]}&detailLat=${activeHike.coords[0]}&detailLon=${activeHike.coords[1]}&zoom=11&level=surface&overlay=${windyOverlay}&menu=&message=true&marker=true&calendar=${debouncedHoursOffset}&forecast=12`}
+                            className="absolute inset-0 w-full h-full border-none"
+                            title="Windy.com Live Weather Map"
+                            allowFullScreen
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           )}
         </section>
