@@ -100,7 +100,36 @@ export default function App() {
   // New States for Custom Reviews and Quote
   const [currentQuote, setCurrentQuote] = useState("");
   const [windyOverlay, setWindyOverlay] = useState("wind");
-  
+  const [debouncedHoursOffset, setDebouncedHoursOffset] = useState(12);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      if (!planDate) return;
+      try {
+        const target = new Date(`${planDate}T00:00:00`);
+        const targetHours = Math.floor(planDeparture);
+        const targetMinutes = Math.round((planDeparture % 1) * 60);
+        target.setHours(targetHours, targetMinutes, 0, 0);
+
+        const now = new Date();
+        const diffMs = target.getTime() - now.getTime();
+        const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+
+        if (diffHours >= 0 && diffHours <= 240) {
+          setDebouncedHoursOffset(diffHours);
+        } else if (diffHours < 0) {
+          setDebouncedHoursOffset(0);
+        } else {
+          setDebouncedHoursOffset(240);
+        }
+      } catch (e) {
+        console.error("Error calculating Windy hour offset", e);
+      }
+    }, 400);
+
+    return () => clearTimeout(handler);
+  }, [planDate, planDeparture]);
+
   const fileInputRef = useRef(null);
 
   // --- LOCAL STORAGE ---
@@ -1268,7 +1297,8 @@ export default function App() {
                         {/* Interactive Windy Map Frame */}
                         <div className="relative w-full h-[320px] rounded-xl overflow-hidden border border-monokai-hover bg-monokai-deep shadow-inner">
                           <iframe
-                            src={`https://embed.windy.com/embed2.html?lat=${activeHike.coords[0]}&lon=${activeHike.coords[1]}&detailLat=${activeHike.coords[0]}&detailLon=${activeHike.coords[1]}&zoom=11&level=surface&overlay=${windyOverlay}&menu=&message=true&marker=true&forecast=12`}
+                            key={`${activeHike.id}-${planDate}-${debouncedHoursOffset}-${windyOverlay}`}
+                            src={`https://embed.windy.com/embed2.html?lat=${activeHike.coords[0]}&lon=${activeHike.coords[1]}&detailLat=${activeHike.coords[0]}&detailLon=${activeHike.coords[1]}&zoom=11&level=surface&overlay=${windyOverlay}&menu=&message=true&marker=true&calendar=${debouncedHoursOffset}&forecast=12`}
                             className="absolute inset-0 w-full h-full border-none"
                             title="Windy.com Live Weather Map"
                             allowFullScreen
