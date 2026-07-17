@@ -2599,6 +2599,7 @@
       // --- APPLICATION STATE ---
       let activeHike = null;
       let wishlist = {}; // hikeId -> { wished: boolean, completed: boolean, comment: string, order: number }
+      let plans = {}; // hikeId -> { planDate, planDeparture, planLinger, planPace, activePlayheadPercent }
       let searchQuery = "";
       let maxDriveTime = 180; // driving slider parameter
       let activeSort = "distance-asc"; // default sorted by closest distance first
@@ -2607,12 +2608,27 @@
       let activeSidebarTab = "browse";
       let activeTab = "browse"; // Unified Master Tab selector: "browse", "wishlist", "planner"
 
-      const systemToday = new Date();
-      const yyyy = systemToday.getFullYear();
-      const mm = String(systemToday.getMonth() + 1).padStart(2, "0");
-      const dd = String(systemToday.getDate()).padStart(2, "0");
-      let planDate = `${yyyy}-${mm}-${dd}`;
+      // Default plan values (today's date, 8:00 AM, 45-min linger, standard pace, dude at start)
+      function todayISO() {
+        const t = new Date();
+        const y = t.getFullYear();
+        const m = String(t.getMonth() + 1).padStart(2, "0");
+        const d = String(t.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+      function defaultPlan() {
+        return {
+          planDate: todayISO(),
+          planDeparture: 8.0,
+          planLinger: 45,
+          planPace: 1.0,
+          activePlayheadPercent: 0.0,
+        };
+      }
 
+      // Global plan values act as an in-memory cache of the ACTIVE hike's plan.
+      // applyPlanToGlobals() / savePlanForActiveHike() sync them with the per-hike store.
+      let planDate = todayISO();
       let planDeparture = 8.0;
       let planLinger = 45;
       let planPace = 1.0;
@@ -2633,6 +2649,7 @@
       // --- INITIALIZATION ---
       window.addEventListener("DOMContentLoaded", () => {
         loadWishlistFromLocal();
+        loadPlansFromLocal();
         loadSettingsFromLocal();
 
         // Restore sidebar controls to match loaded state
@@ -2664,6 +2681,9 @@
 
         // If a hike was active, re-render the planner detail view
         if (activeHike) {
+          // Restore that hike's saved plan (date/time/pace/dude position)
+          // into the global variables before rendering.
+          applyPlanToGlobals(activeHike.id);
           renderActiveHike();
         }
 
@@ -2700,6 +2720,59 @@
         }
       }
 
+      // --- PER-HIKE PLAN PERSISTENCE ---
+      // hikeId -> { planDate, planDeparture, planLinger, planPace, activePlayheadPercent }
+      function loadPlansFromLocal() {
+        try {
+          const stored = localStorage.getItem("peakplanner_plans");
+          if (stored) {
+            plans = JSON.parse(stored);
+          }
+        } catch (e) {
+          console.error("Failed to load plans from LocalStorage", e);
+        }
+      }
+
+      function savePlans() {
+        try {
+          localStorage.setItem("peakplanner_plans", JSON.stringify(plans));
+        } catch (e) {
+          console.error("Failed to save plans to LocalStorage", e);
+        }
+      }
+
+      // Return a hike's plan, filling in defaults for any missing fields so
+      // older saved plans stay valid as new fields are introduced.
+      function getPlanForHike(hikeId) {
+        const stored = plans[hikeId] || {};
+        return { ...defaultPlan(), ...stored };
+      }
+
+      // Copy a hike's stored plan into the global "active" variables so the
+      // many functions that read planDate / planDeparture / etc. see the
+      // right values without each needing to know about per-hike storage.
+      function applyPlanToGlobals(hikeId) {
+        const p = getPlanForHike(hikeId);
+        planDate = p.planDate;
+        planDeparture = p.planDeparture;
+        planLinger = p.planLinger;
+        planPace = p.planPace;
+        activePlayheadPercent = p.activePlayheadPercent;
+      }
+
+      // Persist the current global plan values back to the active hike's slot.
+      function savePlanForActiveHike() {
+        if (!activeHike) return;
+        plans[activeHike.id] = {
+          planDate,
+          planDeparture,
+          planLinger,
+          planPace,
+          activePlayheadPercent,
+        };
+        savePlans();
+      }
+
       function loadSettingsFromLocal() {
         try {
           const stored = localStorage.getItem("peakplanner_settings");
@@ -2711,12 +2784,9 @@
               activeSort = settings.activeSort;
             if (settings.activeDifficultyFilter !== undefined)
               activeDifficultyFilter = settings.activeDifficultyFilter;
-            if (settings.planDate !== undefined) planDate = settings.planDate;
-            if (settings.planDeparture !== undefined)
-              planDeparture = settings.planDeparture;
-            if (settings.planLinger !== undefined)
-              planLinger = settings.planLinger;
-            if (settings.planPace !== undefined) planPace = settings.planPace;
+            // NOTE: planDate / planDeparture / planLinger / planPace /
+            // activePlayheadPercent are now stored per-hike in peakplanner_plans
+            // and applied to the globals via applyPlanToGlobals() on boot/select.
             if (settings.windyOverlay !== undefined)
               windyOverlay = settings.windyOverlay;
             if (
@@ -2728,8 +2798,6 @@
             }
             if (settings.activeTab !== undefined)
               activeTab = settings.activeTab;
-            if (settings.activePlayheadPercent !== undefined)
-              activePlayheadPercent = settings.activePlayheadPercent;
           }
         } catch (e) {
           console.error("Failed to load settings from LocalStorage", e);
@@ -2741,14 +2809,10 @@
           maxDriveTime,
           activeSort,
           activeDifficultyFilter,
-          planDate,
-          planDeparture,
-          planLinger,
-          planPace,
+          // Per-hike plan fields live in peakplanner_plans, not here.
           windyOverlay,
           activeHikeId: activeHike ? activeHike.id : null,
           activeTab,
-          activePlayheadPercent,
         };
         try {
           localStorage.setItem(
@@ -3582,7 +3646,9 @@
         const hike = HIKE_DATA.find((h) => h.id === hikeId);
         if (!hike) return;
         activeHike = hike;
-        activePlayheadPercent = 0.0;
+        // Restore this hike's saved plan (date/time/pace/dude position)
+        // into the global variables before rendering.
+        applyPlanToGlobals(hikeId);
 
         const randIndex = Math.floor(Math.random() * HIKING_QUOTES.length);
         currentQuote = HIKING_QUOTES[randIndex];
@@ -3755,7 +3821,7 @@
         planDate = e.target.value;
         fetchWeatherForPlan();
         recalculatePlanner();
-        saveSettings();
+        savePlanForActiveHike();
       }
 
       function handlePlanDepartureChange(e) {
@@ -3765,7 +3831,7 @@
           readout.innerText = formatDecimalHour(planDeparture);
         }
         recalculatePlanner();
-        saveSettings();
+        savePlanForActiveHike();
       }
 
       function handlePlanLingerChange(e) {
@@ -3775,7 +3841,7 @@
           readout.innerText = `${planLinger} Minutes`;
         }
         recalculatePlanner();
-        saveSettings();
+        savePlanForActiveHike();
       }
 
       function handlePlanPaceChange(pace) {
@@ -3808,7 +3874,7 @@
         }
 
         recalculatePlanner();
-        saveSettings();
+        savePlanForActiveHike();
       }
 
       function switchWindyLayer(layerId) {
@@ -4229,7 +4295,7 @@
           if (isDraggingHiker) {
             isDraggingHiker = false;
             hikerGroup.style.cursor = "grab";
-            saveSettings();
+            savePlanForActiveHike();
           }
         };
 
@@ -4311,15 +4377,20 @@
       }
 
       // --- BACKUP & EXPORTS ---
+      // Bundles wishlist AND per-hike plans so a restored backup brings back
+      // every trail's saved date/time/pace/dude position. Format:
+      //   { version: 2, wishlist: {...}, plans: {...} }
+      // Legacy backups (a bare wishlist object) are still accepted on import.
       function exportBackupJSON() {
+        const payload = { version: 2, wishlist, plans };
         const dataStr =
           "data:text/json;charset=utf-8," +
-          encodeURIComponent(JSON.stringify(wishlist, null, 2));
+          encodeURIComponent(JSON.stringify(payload, null, 2));
         const downloadAnchor = document.createElement("a");
         downloadAnchor.setAttribute("href", dataStr);
         downloadAnchor.setAttribute(
           "download",
-          "peakplanner_wishlist_backup.json",
+          "peakplanner_backup.json",
         );
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
@@ -4340,7 +4411,22 @@
           try {
             const parsed = JSON.parse(e.target.result);
             if (typeof parsed === "object" && parsed !== null) {
-              saveWishlist(parsed);
+              // New wrapped format: { version, wishlist, plans }
+              if (parsed.version === 2) {
+                saveWishlist(parsed.wishlist || {});
+                plans = parsed.plans || {};
+                savePlans();
+              } else {
+                // Legacy format: a bare wishlist object. The "version" key
+                // won't be present on old exports, so treat the whole object
+                // as a wishlist.
+                saveWishlist(parsed);
+              }
+              // Make the active hike (if any) reflect its just-restored plan.
+              if (activeHike) {
+                applyPlanToGlobals(activeHike.id);
+                renderActiveHike();
+              }
               showToast("Backup restored!");
             } else {
               showToast("Invalid backup file structure.", true);
@@ -5024,7 +5110,7 @@ ${weatherText}
           html: `
                   <div class="relative flex items-center justify-center">
                     <div class="absolute w-5 h-5 rounded-full bg-monokai-yellow animate-ping opacity-80"></div>
-                    <div class="relative w-4 h-4 rounded-full bg-monokai-yellow border-2 border-monokai-deep shadow-2xl flex items-center justify-center font-bold text-[9px] text-monokai-deep">🚶</div>
+                    <div class="relative w-4 h-4 rounded-full bg-monokai-yellow border-2 border-monokai-deep shadow-2xl"></div>
                   </div>
                 `,
           className: "",
