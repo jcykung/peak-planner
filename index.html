@@ -1097,7 +1097,7 @@
                 parking: "Grouse Mountain Gondola pay parking lot.",
                 meetingPoint: "Baden Powell sign board right of the main Grind gate",
                 instructions: "Relentless stair climb. 2,830 wooden and rock stairs climbing continuously. Downward travel on foot is illegal; purchase a download gondola pass.",
-                img: "https://www.outdoorvancouver.ca/wp-content/uploads/2019/01/abby-grindSM.jpg",
+                img: "https://www.vancouvertrails.com/images/hikes/grouse-grind.jpg",
                 coords: [49.3801,-123.0815],
                 trailType: "one-way",
                 elevationProfile: [
@@ -1137,7 +1137,7 @@
                 parking: "Sea to Sky Gondola Base Terminal Lot.",
                 meetingPoint: "Main trail map kiosk right beside Gondola Guest Services",
                 instructions: "Climb past the Chief connector, ascending steep granite step routes and fixed rope ladders under Gondola path up to Summit Lodge.",
-                img: "https://www.outdoorvancouver.ca/wp-content/uploads/2014/06/sea-to-summit-hike.jpg",
+                img: "https://www.vancouvertrails.com/images/hikes/sea-to-summit.jpg",
                 coords: [49.6716,-123.1589],
                 trailType: "one-way",
                 elevationProfile: [
@@ -1207,7 +1207,7 @@
                 parking: "Elk-Thurston Trailhead Gravel Lot. Free.",
                 meetingPoint: "BC Parks trailhead shelter near gate",
                 instructions: "Steep forest switchbacks climb up to a panoramic ridge overlooking Chilliwack River Valley and Cultus Lake.",
-                img: "https://www.outdoorvancouver.ca/wp-content/uploads/2017/10/elk-mountainSM.jpg",
+                img: "https://www.vancouvertrails.com/images/hikes/elk-mountain.jpg",
                 coords: [49.1049,-121.8207],
                 trailType: "out-and-back",
                 elevationProfile: [
@@ -1407,7 +1407,7 @@
                 parking: "Minnekhada Quarry Road Main Lot.",
                 meetingPoint: "Minnekhada Lodge sign board at park entry gate",
                 instructions: "Follow flat marsh paths, bypass Low Knoll fork. Ascend single rocky forest path to reach a high cliff viewpoint looking over Pitt River.",
-                img: "https://www.outdoorvancouver.ca/wp-content/uploads/2016/04/highknollTW.jpg",
+                img: "https://www.vancouvertrails.com/images/hikes/minnekhada-regional-park.jpg",
                 coords: [49.3,-122.7072],
                 trailType: "out-and-back",
                 elevationProfile: [
@@ -1447,7 +1447,7 @@
                 parking: "Buntzen Lake South Recreation Area Lot.",
                 meetingPoint: "Main gazebo in front of Buntzen South beach",
                 instructions: "Follow lake trail past east shore suspension bridge. Proceed past North beach, returning along scenic forest shoreline tracks on west beach.",
-                img: "https://www.outdoorvancouver.ca/wp-content/uploads/2015/04/swanfallsTW.jpg",
+                img: "https://www.vancouvertrails.com/images/hikes/buntzen-lake.jpg",
                 coords: [49.3407,-122.8552],
                 trailType: "loop",
                 elevationProfile: [
@@ -1694,11 +1694,11 @@
             const stickyHeader = document.getElementById('sticky-mini-header');
             if (!stickyHeader) return;
             if (el.scrollTop > 180) {
-                stickyHeader.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
-                stickyHeader.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                stickyHeader.classList.remove('absolute', 'opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
+                stickyHeader.classList.add('sticky', 'opacity-100', 'pointer-events-auto', 'translate-y-0');
             } else {
-                stickyHeader.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
-                stickyHeader.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
+                stickyHeader.classList.remove('sticky', 'opacity-100', 'pointer-events-auto', 'translate-y-0');
+                stickyHeader.classList.add('absolute', 'opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
             }
         }
 
@@ -3422,7 +3422,7 @@ ${weatherText}
                 </div>
 
                 <!-- Sticky Mini Header (reduces to one line when scrolled) -->
-                <div id="sticky-mini-header" class="sticky top-0 z-30 bg-monokai-deep/95 backdrop-blur border-b border-monokai-hover px-4 py-2.5 flex items-center justify-between transition-all duration-300 opacity-0 pointer-events-none translate-y-[-100%] shadow-lg shrink-0">
+                <div id="sticky-mini-header" class="absolute top-0 left-0 right-0 z-30 bg-monokai-deep/95 backdrop-blur border-b border-monokai-hover px-4 py-2.5 flex items-center justify-between transition-all duration-300 opacity-0 pointer-events-none translate-y-[-100%] shadow-lg shrink-0">
                     <div class="flex items-center space-x-2.5 min-w-0">
                         <span class="text-[9px] font-mono text-monokai-yellow uppercase border border-monokai-yellow/30 px-1.5 py-0.5 rounded truncate bg-monokai-bg shrink-0">
                             ${activeHike.region}
