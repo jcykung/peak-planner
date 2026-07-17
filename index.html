@@ -653,49 +653,15 @@
     </section>
 
     <!-- 2. WISHLIST DOSSIER -->
-    <section class="print-only p-10 text-gray-900 bg-white max-w-4xl mx-auto space-y-8" id="print-wishlist-layout"
+    <section class="print-only p-10 text-gray-900 bg-white max-w-4xl mx-auto space-y-4" id="print-wishlist-layout"
         data-print-mode="wishlist">
-        <div class="rounded-2xl overflow-hidden">
-            <div class="bg-gradient-to-r from-emerald-600 to-green-700 p-6 flex justify-between items-end">
-                <div>
-                    <span class="text-xs font-bold tracking-widest text-emerald-200 uppercase block mb-1">
-                        Adventure Catalog &amp; Completion Logs
-                    </span>
-                    <h1 class="text-3xl font-black uppercase tracking-tight text-white">Hike Wishlist Dossier</h1>
-                    <p class="text-xs text-emerald-200 mt-0.5">Selected hikes and priorities generated via PeakPlanner
-                    </p>
-                </div>
-                <div class="text-right font-mono text-[10px] text-emerald-200">
-                    <p class="font-bold text-white">WISHLIST PORTFOLIO</p>
-                    <p>Printed: <span class="print-created-date"></span></p>
-                    <p>Primary Sources: OutdoorVancouver.ca &amp; VancouverTrails.com</p>
-                </div>
-            </div>
+        <div class="border-b pb-3 flex justify-between items-end">
+            <h1 class="text-xl font-bold tracking-tight text-gray-900 uppercase">Hike List</h1>
+            <span class="text-xs text-gray-500 font-mono">Printed: <span class="print-created-date"></span></span>
         </div>
 
-        <div
-            class="border border-gray-200 p-4 bg-gray-50 rounded-2xl flex justify-around items-center text-xs font-mono shadow-sm">
-            <div class="text-center">
-                <span class="text-gray-400 text-[10px] uppercase block mb-0.5">Total Listed Trails</span>
-                <span id="print-wishlist-total" class="font-extrabold text-lg text-gray-900">0</span>
-            </div>
-            <div class="h-8 w-px bg-gray-200"></div>
-            <div class="text-center">
-                <span class="text-gray-400 text-[10px] uppercase block mb-0.5">Completed Adventures</span>
-                <span id="print-wishlist-done" class="font-extrabold text-lg text-emerald-600">0</span>
-            </div>
-        </div>
-
-        <div class="space-y-4">
-            <h3 class="text-sm font-black uppercase tracking-wider text-gray-900 border-b pb-2">Customized Expedition
-                Directory</h3>
-            <div id="print-wishlist-table" class="space-y-4">
-                <!-- Wishlist items compiled dynamically -->
-            </div>
-        </div>
-
-        <div class="text-center text-[10px] text-gray-400 font-mono pt-6 border-t border-gray-200">
-            Generated via PeakPlanner. Pack safe, respect trail conditions, and leave no trace.
+        <div id="print-wishlist-table" class="space-y-2">
+            <!-- Wishlist items compiled dynamically -->
         </div>
     </section>
 
@@ -2756,8 +2722,10 @@ ${weatherText}
             document.querySelectorAll('.print-created-date').forEach(el => el.innerText = todayPrintDate);
 
             const items = getSortedWishlistItems();
-            document.getElementById('print-wishlist-total').innerText = items.length;
-            document.getElementById('print-wishlist-done').innerText = items.filter(h => wishlist[h.id]?.completed).length;
+            const totalEl = document.getElementById('print-wishlist-total');
+            if (totalEl) totalEl.innerText = items.length;
+            const doneEl = document.getElementById('print-wishlist-done');
+            if (doneEl) doneEl.innerText = items.filter(h => wishlist[h.id]?.completed).length;
 
             const tableContainer = document.getElementById('print-wishlist-table');
             tableContainer.innerHTML = "";
@@ -2771,34 +2739,18 @@ ${weatherText}
                     const completionClass = isCompleted ? "line-through text-gray-400 opacity-60" : "text-gray-900";
 
                     const card = document.createElement('div');
-                    card.className = "border border-gray-200 p-4 rounded-2xl print-card space-y-2 text-xs bg-white shadow-sm";
+                    card.className = "flex justify-between items-center py-2.5 border-b border-gray-200 text-xs break-inside-avoid page-break-inside-avoid";
                     card.innerHTML = `
-                        <div class="flex justify-between items-center border-b pb-2 font-bold ${completionClass}">
-                            <span class="text-sm font-extrabold flex items-center gap-2">
-                                <span class="font-mono text-gray-400">${isCompleted ? '✓' : '□'}</span>
-                                Priority #${idx + 1}: ${hike.name} <span class="text-xs font-normal text-gray-400">(${hike.region})</span>
-                            </span>
-                            <span class="text-[9px] font-mono tracking-wider uppercase px-2 py-0.5 rounded ${isCompleted ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'}">
-                                ${isCompleted ? 'Completed' : 'Planned'}
-                            </span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-mono text-gray-400 text-xs">${isCompleted ? '✓' : '□'}</span>
+                            <span class="font-bold text-gray-900 ${completionClass}">${idx + 1}. ${hike.name}</span>
+                            <span class="text-gray-400 text-[10px] ml-1 ${completionClass}">(${hike.region})</span>
                         </div>
-                        
-                        <div class="grid grid-cols-4 gap-2 text-[10px] font-mono text-gray-600 py-1 border-b border-gray-100 ${isCompleted ? 'line-through text-gray-400 opacity-60' : ''}">
-                            <div>Distance: <b class="text-gray-900">${hike.distance}</b></div>
-                            <div>Duration: <b class="text-gray-900">${hike.duration} hrs</b></div>
-                            <div>Gain: <b class="text-gray-900">${hike.elevation}m</b></div>
-                            <div>Drive: <b class="text-gray-900">${hike.distFromVan} mins</b></div>
-                        </div>
-                        
-                        ${item.comment ? `
-                            <div class="bg-amber-50/50 p-2.5 rounded-xl italic text-xs text-gray-700 border-l-4 border-amber-400 my-1 ${isCompleted ? 'line-through text-gray-400 opacity-40' : ''}">
-                                <strong>Personal Note:</strong> "${item.comment}"
-                            </div>
-                        ` : ''}
-                        
-                        <div class="text-[10px] text-gray-500 leading-relaxed pt-1 ${isCompleted ? 'line-through text-gray-400 opacity-40' : ''}">
-                            <strong class="text-gray-800 uppercase text-[9px] tracking-wider block mb-0.5">Route Walkthrough Summary:</strong> 
-                            ${hike.instructions}
+                        <div class="flex gap-4 font-mono text-[10px] text-gray-600 ${isCompleted ? 'line-through text-gray-400 opacity-60' : ''}">
+                            <span>Dist: <b>${hike.distance}</b></span>
+                            <span>Elev: <b>${hike.elevation}m</b></span>
+                            <span>Time: <b>${hike.duration}h</b></span>
+                            <span>Drive: <b>${hike.distFromVan}m</b></span>
                         </div>
                     `;
                     tableContainer.appendChild(card);
