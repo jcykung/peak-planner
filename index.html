@@ -259,11 +259,11 @@
                 <span>Browse Trails</span>
             </button>
             <button id="global-tab-wishlist" onclick="switchGlobalTab('wishlist')"
-                class="flex-1 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center justify-center space-x-1.5 text-monokai-dim hover:text-monokai-text relative">
+                class="flex-1 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center justify-center space-x-1.5 text-monokai-dim hover:text-monokai-text">
                 <i data-lucide="heart" class="w-3.5 h-3.5"></i>
                 <span>Wishlist</span>
                 <span id="wishlist-badge"
-                    class="absolute -top-1 -right-1 px-1.5 py-0.5 bg-monokai-pink text-monokai-deep text-[9px] font-extrabold rounded-full hidden">0</span>
+                    class="px-1.5 py-0.5 bg-monokai-pink text-monokai-deep text-[10px] font-extrabold rounded-full hidden">0</span>
             </button>
             <button id="global-tab-planner" onclick="switchGlobalTab('planner')"
                 class="flex-1 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center justify-center space-x-1.5 text-monokai-dim hover:text-monokai-text">
@@ -2158,10 +2158,18 @@
 
         function getRouteCoordinateAtPercent(routePath, percent, trailType) {
             if (!routePath || routePath.length === 0) return null;
+            
+            // Check if the routePath already encodes a round-trip or loop
+            // (i.e. the start and end points are very close to each other)
+            const first = routePath[0];
+            const last = routePath[routePath.length - 1];
+            const dist = Math.sqrt(Math.pow(last[0] - first[0], 2) + Math.pow(last[1] - first[1], 2));
+            const isClosedRoute = dist < 0.005; // ~500 meters threshold
+
             let mappedPercent;
-            // Loops and one-way trails: slider 0-100% maps linearly along full route.
-            // Out-and-back: slider 0-50% goes to end, 50-100% returns to start.
-            if (trailType === 'loop' || trailType === 'one-way') {
+            // Loops, one-way trails, and round-trip GPX paths: slider 0-100% maps linearly along the full route.
+            // Out-and-back one-way paths: slider 0-50% goes to end, 50-100% returns to start.
+            if (trailType === 'loop' || trailType === 'one-way' || isClosedRoute) {
                 mappedPercent = percent;
             } else {
                 // out-and-back (default)
