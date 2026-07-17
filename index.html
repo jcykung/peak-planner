@@ -476,31 +476,36 @@
                     Forecast
                 </span>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
-                <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">Temperature</span>
-                    <span id="print-wx-temp" class="text-base font-extrabold text-gray-900">--°C</span>
-                    <span id="print-wx-cond" class="block text-[9px] text-gray-400 mt-0.5">(--)</span>
+            <div id="print-weather-data-box" class="space-y-4">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs font-mono">
+                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">Temperature</span>
+                        <span id="print-wx-temp" class="text-base font-extrabold text-gray-900">--°C</span>
+                        <span id="print-wx-cond" class="block text-[9px] text-gray-400 mt-0.5">(--)</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">Winds &amp; Gusts</span>
+                        <span id="print-wx-wind" class="text-sm font-extrabold text-gray-900">-- kt</span>
+                        <span id="print-wx-gust" class="block text-[9px] text-gray-400 mt-0.5">Gusts to -- kt</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">Clouds &amp; Humidity</span>
+                        <span id="print-wx-clouds" class="text-sm font-extrabold text-gray-900">Clouds: --%</span>
+                        <span id="print-wx-humidity" class="block text-[9px] text-gray-400 mt-0.5">Humidity: --%</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">UV &amp; Air Quality</span>
+                        <span id="print-wx-uv-aqi" class="text-sm font-extrabold text-gray-900">UV: -- | AQI: --</span>
+                        <span id="print-wx-uv-advice" class="block text-[9px] text-gray-400 mt-0.5">--</span>
+                    </div>
                 </div>
-                <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">Winds &amp; Gusts</span>
-                    <span id="print-wx-wind" class="text-sm font-extrabold text-gray-900">-- kt</span>
-                    <span id="print-wx-gust" class="block text-[9px] text-gray-400 mt-0.5">Gusts to -- kt</span>
-                </div>
-                <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">Clouds &amp; Humidity</span>
-                    <span id="print-wx-clouds" class="text-sm font-extrabold text-gray-900">Clouds: --%</span>
-                    <span id="print-wx-humidity" class="block text-[9px] text-gray-400 mt-0.5">Humidity: --%</span>
-                </div>
-                <div class="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <span class="block text-[9px] uppercase font-bold text-gray-500 mb-1">UV &amp; Air Quality</span>
-                    <span id="print-wx-uv-aqi" class="text-sm font-extrabold text-gray-900">UV: -- | AQI: --</span>
-                    <span id="print-wx-uv-advice" class="block text-[9px] text-gray-400 mt-0.5">--</span>
+                <div id="print-wx-advice"
+                    class="text-xs p-3 rounded-xl border border-orange-100 bg-orange-50/50 text-orange-900 font-medium">
+                    --
                 </div>
             </div>
-            <div id="print-wx-advice"
-                class="text-xs p-3 rounded-xl border border-orange-100 bg-orange-50/50 text-orange-900 font-medium">
-                --
+            <div id="print-weather-unavailable-box" class="hidden text-center p-4 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-500 font-bold">
+                ⚠️ Live GFS model forecast is not available for this date (> 10 days in advance). Please check regional climatology separately.
             </div>
         </div>
 
@@ -549,6 +554,12 @@
                         </div>
                         <span id="print-time-return" class="font-mono font-black text-emerald-600 text-sm">--</span>
                     </div>
+                </div>
+                
+                <!-- Sunset Warning inside print container -->
+                <div id="print-sunset-warning-box" class="hidden mt-4 p-3 bg-red-50 border border-red-200 text-red-900 rounded-xl text-xs font-medium space-y-1">
+                    <p class="font-extrabold flex items-center gap-1">⚠️ NIGHT/DAWN EXPEDITION WARNING</p>
+                    <p class="text-[11px] text-red-700" id="print-sunset-warning-text">This expedition extends into hours with no daylight. Mandate headlamps and check trail maps carefully.</p>
                 </div>
             </div>
 
@@ -1486,6 +1497,10 @@
             "16:45", "17:30", "19:15", "20:00", "20:45", "21:15", "21:00", "20:15", "19:15", "18:15", "16:45", "16:15"
         ];
 
+        const SUNRISE_DATABASE = [
+            "08:00", "07:15", "06:15", "05:15", "04:30", "04:15", "04:30", "05:15", "06:00", "06:45", "07:30", "08:00"
+        ];
+
         // --- APPLICATION STATE ---
         let activeHike = null;
         let wishlist = {}; // hikeId -> { wished: boolean, completed: boolean, comment: string, order: number }
@@ -1514,6 +1529,11 @@
 
         let isDraggingHiker = false;
         let activePlayheadPercent = 0.0;
+
+        // Cached weather variables
+        let activeWeatherForecast = null;
+        let isFetchingWeather = false;
+        let weatherFetchError = false;
 
         // --- INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
@@ -1716,58 +1736,97 @@
             const isForecastAvailable = (diffDays >= 0 && diffDays <= 10);
             const forecastMode = isForecastAvailable ? "LIVE_GFS" : "CLIMATOLOGY";
 
-            const month = selectedDate.getMonth();
-            const cityBaselines = [5, 7, 10, 13, 16, 19, 23, 23, 19, 13, 8, 5];
-            let baseTemp = cityBaselines[month];
+            let baseTemp, cloudCover, avgWindSpeed, windGustSpeed, windDirection, uvIndex, aqi, humidity, precipProb, precipRate;
 
-            const dayOfSelected = selectedDate.getDate();
-            const dateVar = Math.sin(dayOfSelected * 0.5) * 3.5;
-            baseTemp += dateVar;
+            const hourIndex = Math.max(0, Math.min(23, Math.round(timeHour)));
 
+            if (activeWeatherForecast && activeWeatherForecast.dateStr === dateStr && activeWeatherForecast.hikeId === hike.id) {
+                // Use real Open-Meteo forecast data
+                baseTemp = activeWeatherForecast.temps[hourIndex];
+                cloudCover = activeWeatherForecast.clouds[hourIndex];
+                avgWindSpeed = Math.round(activeWeatherForecast.winds[hourIndex]);
+                windGustSpeed = Math.round(activeWeatherForecast.gusts[hourIndex]);
+                
+                const deg = activeWeatherForecast.windDirs[hourIndex];
+                const windDirections = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+                const windDirIndex = Math.floor(((deg + 11.25) % 360) / 22.5);
+                windDirection = windDirections[windDirIndex] || "N";
+                
+                uvIndex = Math.round(activeWeatherForecast.uvs[hourIndex]);
+                aqi = Math.round(activeWeatherForecast.aqis[hourIndex]);
+                humidity = Math.round(activeWeatherForecast.humidities[hourIndex]);
+                precipProb = Math.round(activeWeatherForecast.precips[hourIndex]);
+                precipRate = Math.round(activeWeatherForecast.precipRates[hourIndex] * 10) / 10;
+            } else {
+                // Fallback / Climatology / Simulation Engine
+                const month = selectedDate.getMonth();
+                const cityBaselines = [5, 7, 10, 13, 16, 19, 23, 23, 19, 13, 8, 5];
+                baseTemp = cityBaselines[month];
+
+                const dayOfSelected = selectedDate.getDate();
+                const dateVar = Math.sin(dayOfSelected * 0.5) * 3.5;
+                baseTemp += dateVar;
+
+                const seed = selectedDate.getDate() + month * 31 + Math.round(hike.coords[0] * 10) + Math.round(hike.coords[1] * 10);
+                const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280.0;
+
+                const cycleValue = Math.cos((timeHour - 15) * Math.PI / 12);
+                const diurnalTempOffset = Math.round(cycleValue * 4);
+                // Base temp is without diurnal, finalTemp will add it.
+                
+                const hourlyCloudOffset = Math.sin((timeHour - 8) * Math.PI / 12) * 15;
+                let baseCloud = 30 + pseudoRandom * 50;
+                if (month >= 10 || month <= 3) baseCloud += 25;
+                if (month >= 6 && month <= 8) baseCloud -= 20;
+                cloudCover = Math.min(100, Math.max(0, Math.round(baseCloud + hourlyCloudOffset)));
+
+                const windBase = 5 + pseudoRandom * 12;
+                const windHourFactor = 1 + Math.max(0, Math.sin((timeHour - 8) * Math.PI / 12) * 0.4);
+                avgWindSpeed = Math.round(windBase * windHourFactor);
+                windGustSpeed = Math.round(avgWindSpeed * (1.3 + pseudoRandom * 0.3));
+
+                const windDirections = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
+                const windDirIndex = Math.floor((pseudoRandom * 16 + (timeHour / 4)) % 16);
+                windDirection = windDirections[windDirIndex];
+
+                const uvPeakFactor = Math.max(0, Math.cos((timeHour - 12.5) * Math.PI / 8));
+                const maxUvByMonth = [1, 2, 4, 6, 8, 10, 10, 9, 6, 4, 2, 1][month];
+                uvIndex = Math.round(maxUvByMonth * uvPeakFactor);
+
+                const aqiBase = 15 + Math.round(pseudoRandom * 25);
+                const aqiDiurnal = Math.sin((timeHour - 9) * Math.PI / 6) * 8;
+                const aqiSummerOffset = (month >= 6 && month <= 8 && pseudoRandom > 0.7) ? (40 + pseudoRandom * 120) : 0;
+                aqi = Math.round(Math.max(5, aqiBase + aqiDiurnal + aqiSummerOffset));
+
+                const humidityBase = [85, 80, 75, 70, 68, 65, 60, 62, 70, 78, 83, 86][month];
+                const humidityHourFactor = -15 * cycleValue;
+                humidity = Math.min(100, Math.max(15, Math.round(humidityBase + humidityHourFactor)));
+
+                precipProb = 0;
+                precipRate = 0;
+                if (cloudCover > 70) {
+                    precipProb = Math.round((cloudCover - 65) * 2.85);
+                    precipRate = Math.round(((cloudCover - 70) * 0.1 * (1 + pseudoRandom * 2.5)) * 10) / 10;
+                }
+            }
+
+            // Apply Elevation lapse rate
             const activeElev = currentElevationMeters !== null ? currentElevationMeters : hike.elevation;
-            const lapse = Math.round(activeElev * 0.0065);
-            const elevationAdjustedBaseTemp = baseTemp - lapse;
+            let finalTemp;
+            let lapse;
 
-            const seed = selectedDate.getDate() + month * 31 + Math.round(hike.coords[0] * 10) + Math.round(hike.coords[1] * 10);
-            const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280.0;
-
-            const cycleValue = Math.cos((timeHour - 15) * Math.PI / 12);
-            const diurnalTempOffset = Math.round(cycleValue * 4);
-            const finalTemp = Math.round(elevationAdjustedBaseTemp + diurnalTempOffset);
-
-            const hourlyCloudOffset = Math.sin((timeHour - 8) * Math.PI / 12) * 15;
-            let baseCloud = 30 + pseudoRandom * 50;
-            if (month >= 10 || month <= 3) baseCloud += 25;
-            if (month >= 6 && month <= 8) baseCloud -= 20;
-            const cloudCover = Math.min(100, Math.max(0, Math.round(baseCloud + hourlyCloudOffset)));
-
-            const windBase = 5 + pseudoRandom * 12;
-            const windHourFactor = 1 + Math.max(0, Math.sin((timeHour - 8) * Math.PI / 12) * 0.4);
-            const avgWindSpeed = Math.round(windBase * windHourFactor);
-            const windGustSpeed = Math.round(avgWindSpeed * (1.3 + pseudoRandom * 0.3));
-
-            const windDirections = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"];
-            const windDirIndex = Math.floor((pseudoRandom * 16 + (timeHour / 4)) % 16);
-            const windDirection = windDirections[windDirIndex];
-
-            const uvPeakFactor = Math.max(0, Math.cos((timeHour - 12.5) * Math.PI / 8));
-            const maxUvByMonth = [1, 2, 4, 6, 8, 10, 10, 9, 6, 4, 2, 1][month];
-            const uvIndex = Math.round(maxUvByMonth * uvPeakFactor);
-
-            const aqiBase = 15 + Math.round(pseudoRandom * 25);
-            const aqiDiurnal = Math.sin((timeHour - 9) * Math.PI / 6) * 8;
-            const aqiSummerOffset = (month >= 6 && month <= 8 && pseudoRandom > 0.7) ? (40 + pseudoRandom * 120) : 0;
-            const aqi = Math.round(Math.max(5, aqiBase + aqiDiurnal + aqiSummerOffset));
-
-            const humidityBase = [85, 80, 75, 70, 68, 65, 60, 62, 70, 78, 83, 86][month];
-            const humidityHourFactor = -15 * cycleValue;
-            const humidity = Math.min(100, Math.max(15, Math.round(humidityBase + humidityHourFactor)));
-
-            let precipProb = 0;
-            let precipRate = 0;
-            if (cloudCover > 70) {
-                precipProb = Math.round((cloudCover - 65) * 2.85);
-                precipRate = Math.round(((cloudCover - 70) * 0.1 * (1 + pseudoRandom * 2.5)) * 10) / 10;
+            if (activeWeatherForecast && activeWeatherForecast.dateStr === dateStr && activeWeatherForecast.hikeId === hike.id) {
+                // Apply lapse cooling relative to trailhead elevation (start of profile)
+                const startElev = hike.elevationProfile[0];
+                const relativeElev = Math.max(0, activeElev - startElev);
+                lapse = Math.round(relativeElev * 0.0065);
+                finalTemp = Math.round(baseTemp - lapse);
+            } else {
+                // Simulated lapse from baseline (sea level)
+                lapse = Math.round(activeElev * 0.0065);
+                const cycleValue = Math.cos((timeHour - 15) * Math.PI / 12);
+                const diurnalTempOffset = Math.round(cycleValue * 4);
+                finalTemp = Math.round(baseTemp - lapse + diurnalTempOffset);
             }
 
             let icon = "sun";
@@ -1799,6 +1858,7 @@
                 alertText = "⛅ PARTLY CLOUDY: Great temperature balance. Excellent visibility across peaks.";
             }
 
+            const month = selectedDate.getMonth();
             if ((month >= 10 || month <= 3) && activeElev > 400 && conditions !== "Snowfall" && conditions !== "Rain / Showers") {
                 conditions = "Deep Subalpine Snowpack";
                 icon = "snowflake";
@@ -1828,6 +1888,116 @@
             };
         }
 
+        async function fetchWeatherForPlan() {
+            if (!activeHike) return;
+
+            const [year, monthVal, dayVal] = planDate.split('-').map(Number);
+            const selectedDate = new Date(year, monthVal - 1, dayVal);
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0);
+
+            const diffTime = selectedDate.getTime() - currentDate.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            const isForecastAvailable = (diffDays >= 0 && diffDays <= 10);
+
+            if (!isForecastAvailable) {
+                activeWeatherForecast = null;
+                updateWeatherUIVisibility(false);
+                return;
+            }
+
+            isFetchingWeather = true;
+            weatherFetchError = false;
+            
+            // Show loading in weather HUD
+            const summaryText = document.getElementById('elevation-hud-summary-text');
+            if (summaryText) {
+                summaryText.innerText = "⚡ Fetching live GFS weather forecast from Open-Meteo...";
+            }
+            const summaryPill = document.getElementById('elevation-hud-summary-pill');
+            if (summaryPill) {
+                summaryPill.className = "p-3 rounded-xl border font-medium text-xs leading-relaxed transition-all duration-300 text-monokai-blue bg-monokai-blue/10 border-monokai-blue/20 animate-pulse";
+            }
+            updateWeatherUIVisibility(true);
+
+            const lat = activeHike.coords[0];
+            const lon = activeHike.coords[1];
+
+            try {
+                const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&start_date=${planDate}&end_date=${planDate}&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,cloud_cover,wind_speed_10m,wind_gusts_10m,wind_direction_10m,uv_index&wind_speed_unit=kn&timezone=auto`;
+                const aqiUrl = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lon}&start_date=${planDate}&end_date=${planDate}&hourly=us_aqi&timezone=auto`;
+
+                const [weatherRes, aqiRes] = await Promise.all([
+                    fetch(weatherUrl).then(res => {
+                        if (!res.ok) throw new Error("Weather API error");
+                        return res.json();
+                    }),
+                    fetch(aqiUrl).then(res => res.json()).catch(() => null)
+                ]);
+
+                if (!weatherRes || !weatherRes.hourly) {
+                    throw new Error("Invalid response format");
+                }
+
+                const hourly = weatherRes.hourly;
+                const aqiHourly = (aqiRes && aqiRes.hourly) ? aqiRes.hourly.us_aqi : Array(24).fill(25);
+
+                activeWeatherForecast = {
+                    dateStr: planDate,
+                    hikeId: activeHike.id,
+                    temps: hourly.temperature_2m,
+                    humidities: hourly.relative_humidity_2m,
+                    clouds: hourly.cloud_cover,
+                    winds: hourly.wind_speed_10m,
+                    gusts: hourly.wind_gusts_10m,
+                    windDirs: hourly.wind_direction_10m,
+                    uvs: hourly.uv_index,
+                    precips: hourly.precipitation_probability,
+                    precipRates: hourly.precipitation,
+                    aqis: aqiHourly
+                };
+
+                isFetchingWeather = false;
+                recalculatePlanner();
+            } catch (err) {
+                console.error("Weather fetch failed:", err);
+                isFetchingWeather = false;
+                weatherFetchError = true;
+                
+                // Fallback to local climatology if API fails
+                const summaryText = document.getElementById('elevation-hud-summary-text');
+                if (summaryText) {
+                    summaryText.innerText = "⚠️ Weather service offline. Displaying local climatology model.";
+                }
+                const summaryPill = document.getElementById('elevation-hud-summary-pill');
+                if (summaryPill) {
+                    summaryPill.className = "p-3 rounded-xl border font-medium text-xs leading-relaxed transition-all duration-300 text-monokai-orange bg-monokai-orange/10 border-monokai-orange/20";
+                }
+                
+                recalculatePlanner();
+            }
+        }
+
+        function updateWeatherUIVisibility(isAvailable) {
+            const dataPanel = document.getElementById('weather-hud-data-panel');
+            const unavailablePanel = document.getElementById('weather-hud-unavailable-panel');
+            const dateSpan = document.getElementById('weather-unavailable-date');
+
+            if (dataPanel && unavailablePanel) {
+                if (isAvailable) {
+                    dataPanel.classList.remove('hidden');
+                    unavailablePanel.classList.add('hidden');
+                } else {
+                    dataPanel.classList.add('hidden');
+                    unavailablePanel.classList.remove('hidden');
+                    if (dateSpan) {
+                        dateSpan.innerText = planDate;
+                    }
+                }
+            }
+        }
+
         // --- TIMELINE SPLITS ---
         function formatDurationText(hours) {
             const h = Math.floor(hours);
@@ -1848,11 +2018,17 @@
 
             const parsedDate = new Date(dateStr + "T00:00:00");
             const targetMonth = isNaN(parsedDate.getTime()) ? 6 : parsedDate.getMonth();
+            
             const sunsetString = SUNSET_DATABASE[targetMonth];
             const parts = sunsetString.split(':');
             const sunsetDecimal = parseInt(parts[0]) + (parseInt(parts[1]) / 60);
 
+            const sunriseString = SUNRISE_DATABASE[targetMonth];
+            const sunriseParts = sunriseString.split(':');
+            const sunriseDecimal = parseInt(sunriseParts[0]) + (parseInt(sunriseParts[1]) / 60);
+
             const isAfterSunset = timeReturn >= sunsetDecimal;
+            const isBeforeSunrise = timeDepart < sunriseDecimal;
 
             return {
                 timeDepart,
@@ -1862,7 +2038,9 @@
                 ascentDuration,
                 descentDuration,
                 sunsetDecimal,
-                isAfterSunset
+                sunriseDecimal,
+                isAfterSunset,
+                isBeforeSunrise
             };
         }
 
@@ -1974,6 +2152,9 @@
 
             // Re-render planner UI with newly loaded hike configuration
             renderActiveHike();
+
+            // Fetch live weather data for the new hike
+            fetchWeatherForPlan();
 
             // Automatically navigate seamlessly to the immersive details Planner view
             switchGlobalTab('planner');
@@ -2100,6 +2281,7 @@
         // --- PLANNER INPUT EVENT HANDLERS ---
         function handlePlanDateChange(e) {
             planDate = e.target.value;
+            fetchWeatherForPlan();
             recalculatePlanner();
         }
 
@@ -2275,6 +2457,80 @@
 
             document.getElementById('elevation-path').setAttribute('d', pathD);
             document.getElementById('elevation-fill').setAttribute('d', fillD);
+
+            // Render Day/Night Shading Background
+            const nightBg = document.getElementById('elevation-night-bg');
+            if (nightBg) {
+                nightBg.innerHTML = '';
+                
+                const splits = calculateTimelineSplits({
+                    duration: activeHike.duration,
+                    planPace,
+                    departHour: planDeparture,
+                    lingerMinutes: planLinger,
+                    dateStr: planDate
+                });
+                
+                const parsedDate = new Date(planDate + "T00:00:00");
+                const targetMonth = isNaN(parsedDate.getTime()) ? 6 : parsedDate.getMonth();
+                
+                const sunriseString = SUNRISE_DATABASE[targetMonth];
+                const sunrParts = sunriseString.split(':');
+                const sunriseDecimal = parseInt(sunrParts[0]) + (parseInt(sunrParts[1]) / 60);
+                const sunsetDecimal = splits.sunsetDecimal;
+                
+                const totalDuration = (splits.timeReturn - splits.timeDepart) || (activeHike.duration * planPace + (planLinger / 60));
+                const segmentWidth = width / 100;
+                let nightRectsHTML = '';
+                
+                for (let i = 0; i < 100; i++) {
+                    const pct = i + 0.5;
+                    const hour = planDeparture + (pct / 100.0) * totalDuration;
+                    const isNight = (hour < sunriseDecimal || hour >= sunsetDecimal);
+                    
+                    if (isNight) {
+                        nightRectsHTML += `<rect x="${i * segmentWidth}" y="0" width="${segmentWidth + 0.5}" height="${height - 25}" fill="#161320" opacity="0.65" />`;
+                    }
+                }
+                
+                let startIsNight = (planDeparture < sunriseDecimal || planDeparture >= sunsetDecimal);
+                let endIsNight = (splits.timeReturn < sunriseDecimal || splits.timeReturn >= sunsetDecimal);
+                
+                if (startIsNight || endIsNight) {
+                    if (startIsNight && !endIsNight) {
+                        const transX = ((sunriseDecimal - planDeparture) / totalDuration) * width;
+                        if (transX > 0 && transX < width) {
+                            nightRectsHTML += `
+                                <text x="${transX / 2}" y="20" fill="#78dce8" opacity="0.5" font-size="8" font-family="monospace" text-anchor="middle">🌙 NIGHT RUN</text>
+                                <text x="${transX + (width - transX) / 2}" y="20" fill="#ffd866" opacity="0.5" font-size="8" font-family="monospace" text-anchor="middle">☀️ DAYLIGHT</text>
+                                <line x1="${transX}" y1="0" x2="${transX}" y2="${height - 25}" stroke="#78dce8" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.4" />
+                            `;
+                        }
+                    } else if (!startIsNight && endIsNight) {
+                        const transX = ((sunsetDecimal - planDeparture) / totalDuration) * width;
+                        if (transX > 0 && transX < width) {
+                            nightRectsHTML += `
+                                <text x="${transX / 2}" y="20" fill="#ffd866" opacity="0.5" font-size="8" font-family="monospace" text-anchor="middle">☀️ DAYLIGHT</text>
+                                <text x="${transX + (width - transX) / 2}" y="20" fill="#78dce8" opacity="0.5" font-size="8" font-family="monospace" text-anchor="middle">🌙 NIGHTFALL WARNING</text>
+                                <line x1="${transX}" y1="0" x2="${transX}" y2="${height - 25}" stroke="#78dce8" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.4" />
+                            `;
+                        }
+                    } else if (startIsNight && endIsNight && totalDuration > 12) {
+                        const transX1 = ((sunriseDecimal - planDeparture) / totalDuration) * width;
+                        const transX2 = ((sunsetDecimal - planDeparture) / totalDuration) * width;
+                        if (transX1 > 0 && transX2 < width) {
+                            nightRectsHTML += `
+                                <text x="${transX1 / 2}" y="20" fill="#78dce8" opacity="0.5" font-size="8" font-family="monospace" text-anchor="middle">🌙 NIGHT</text>
+                                <text x="${transX1 + (transX2 - transX1) / 2}" y="20" fill="#ffd866" opacity="0.5" font-size="8" font-family="monospace" text-anchor="middle">☀️ DAYLIGHT</text>
+                                <text x="${transX2 + (width - transX2) / 2}" y="20" fill="#78dce8" opacity="0.5" font-size="8" font-family="monospace" text-anchor="middle">🌙 NIGHT</text>
+                                <line x1="${transX1}" y1="0" x2="${transX1}" y2="${height - 25}" stroke="#78dce8" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.4" />
+                                <line x1="${transX2}" y1="0" x2="${transX2}" y2="${height - 25}" stroke="#78dce8" stroke-width="1.5" stroke-dasharray="3 3" opacity="0.4" />
+                            `;
+                        }
+                    }
+                }
+                nightBg.innerHTML = nightRectsHTML;
+            }
 
             updateStartEndFlags(width, height, profile, elevMin, range);
             updateHikerPosition(activePlayheadPercent);
@@ -2482,12 +2738,27 @@
             const sunsetWarningPill = document.getElementById('sunset-warning-pill');
             const nightfallHazardWarning = document.getElementById('nightfall-hazard-warning');
 
-            if (splits.isAfterSunset) {
+            if (splits.isAfterSunset || splits.isBeforeSunrise) {
                 sunsetWarningPill.classList.remove('hidden');
                 sunsetWarningPill.classList.add('flex');
 
                 nightfallHazardWarning.classList.remove('hidden');
-                document.getElementById('nightfall-sunset-time').innerText = formatDecimalHour(splits.sunsetDecimal);
+                
+                let warningText = "";
+                if (splits.isAfterSunset && splits.isBeforeSunrise) {
+                    warningText = `Hike starts before sunrise (${formatDecimalHour(splits.sunriseDecimal)}) and ends after sunset (${formatDecimalHour(splits.sunsetDecimal)}). Headlamp is mandatory.`;
+                } else if (splits.isAfterSunset) {
+                    warningText = `Return time surpasses sunset (${formatDecimalHour(splits.sunsetDecimal)}). Headlamp is mandatory.`;
+                } else {
+                    warningText = `Departure starts before sunrise (${formatDecimalHour(splits.sunriseDecimal)}). Headlamp is mandatory.`;
+                }
+                nightfallHazardWarning.innerHTML = `
+                    <i data-lucide="info" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                    <div class="space-y-1">
+                        <p class="uppercase font-extrabold tracking-wider text-[10px]">⚠️ Night/Dawn Hiking Alert</p>
+                        <p class="text-[10px]">${warningText}</p>
+                    </div>
+                `;
             } else {
                 sunsetWarningPill.classList.add('hidden');
                 sunsetWarningPill.classList.remove('flex');
@@ -2551,14 +2822,17 @@
             });
 
             const wx = getElevationCorrectedWeather(activeHike, planDate, planDeparture);
-            const weatherText = wx ? `
+            const weatherText = wx && wx.isForecastAvailable ? `
 🌤 WEATHER FORECAST (GFS Model):
 - Temperature: ${wx.temp}°C (${wx.conditions})
 - Winds: ${wx.windSpeed} kt (${wx.windDir}) with gusts to ${wx.windGust} kt
 - Cloud Cover: ${wx.clouds}% | Humidity: ${wx.humidity}%
 - UV Index: ${wx.uv} | AQI: ${wx.aqi}
 - Conditions Alert: ${wx.advice}
-` : '';
+` : `
+🌤 WEATHER FORECAST:
+- Live forecast is not available for dates beyond 10 days. Refer to Windy.com for climatology overlays.
+`;
 
             const textBlock = `🌲 TRIP PLAN: ${activeHike.name.toUpperCase()} 🌲
 📅 Target Date: ${planDate}
@@ -2571,7 +2845,8 @@
 - Reach Summit Peak: ${formatDecimalHour(splits.timeSummit)}
 - Start Descending: ${formatDecimalHour(splits.timeDescent)}
 - Return to Vehicles: ${formatDecimalHour(splits.timeReturn)}
-* Parking Area: ${activeHike.parking}
+* Parking Area: ${activeHike.parking}${splits.isAfterSunset || splits.isBeforeSunrise ? `
+⚠️ NIGHTFALL/DAWN WARNING:${splits.isAfterSunset ? ` Return passes sunset (${formatDecimalHour(splits.sunsetDecimal)}).` : ''}${splits.isBeforeSunrise ? ` Departure before sunrise (${formatDecimalHour(splits.sunriseDecimal)}).` : ''} Headlamps mandatory.` : ''}
 ${weatherText}
 💬 TRAIL INSPIRATION:
 "${currentQuote}"
@@ -2694,16 +2969,48 @@ ${weatherText}
             }
 
             const wx = getElevationCorrectedWeather(activeHike, planDate, planDeparture);
-            document.getElementById('print-weather-meta').innerText = `${wx.isForecastAvailable ? 'Live GFS Model Forecast' : 'Regional Climatology averages'}`;
-            document.getElementById('print-wx-temp').innerText = `${wx.temp}°C`;
-            document.getElementById('print-wx-cond').innerText = `(${wx.conditions})`;
-            document.getElementById('print-wx-wind').innerText = `${wx.windSpeed} kt (${wx.windDir})`;
-            document.getElementById('print-wx-gust').innerText = `Gusts to ${wx.windGust} kt`;
-            document.getElementById('print-wx-clouds').innerText = `Clouds: ${wx.clouds}%`;
-            document.getElementById('print-wx-humidity').innerText = `Humidity: ${wx.humidity}%`;
-            document.getElementById('print-wx-uv-aqi').innerText = `UV: ${wx.uv} | AQI: ${wx.aqi}`;
-            document.getElementById('print-wx-uv-advice').innerText = wx.uv >= 8 ? "Very High UV" : wx.uv >= 6 ? "High UV" : "Moderate/Low UV";
-            document.getElementById('print-wx-advice').innerText = wx.advice;
+            const printWxDataBox = document.getElementById('print-weather-data-box');
+            const printWxUnavailableBox = document.getElementById('print-weather-unavailable-box');
+
+            if (wx.isForecastAvailable) {
+                if (printWxDataBox) printWxDataBox.classList.remove('hidden');
+                if (printWxUnavailableBox) printWxUnavailableBox.classList.add('hidden');
+                
+                document.getElementById('print-weather-meta').innerText = 'Live GFS Model Forecast';
+                document.getElementById('print-wx-temp').innerText = `${wx.temp}°C`;
+                document.getElementById('print-wx-cond').innerText = `(${wx.conditions})`;
+                document.getElementById('print-wx-wind').innerText = `${wx.windSpeed} kt (${wx.windDir})`;
+                document.getElementById('print-wx-gust').innerText = `Gusts to ${wx.windGust} kt`;
+                document.getElementById('print-wx-clouds').innerText = `Clouds: ${wx.clouds}%`;
+                document.getElementById('print-wx-humidity').innerText = `Humidity: ${wx.humidity}%`;
+                document.getElementById('print-wx-uv-aqi').innerText = `UV: ${wx.uv} | AQI: ${wx.aqi}`;
+                document.getElementById('print-wx-uv-advice').innerText = wx.uv >= 8 ? "Very High UV" : wx.uv >= 6 ? "High UV" : "Moderate/Low UV";
+                document.getElementById('print-wx-advice').innerText = wx.advice;
+            } else {
+                if (printWxDataBox) printWxDataBox.classList.add('hidden');
+                if (printWxUnavailableBox) printWxUnavailableBox.classList.remove('hidden');
+                document.getElementById('print-weather-meta').innerText = 'Forecast Unavailable';
+            }
+
+            // Populate sunset/sunrise warning in print layout
+            const printSunsetBox = document.getElementById('print-sunset-warning-box');
+            const printSunsetText = document.getElementById('print-sunset-warning-text');
+            if (printSunsetBox && printSunsetText) {
+                if (splits.isAfterSunset || splits.isBeforeSunrise) {
+                    printSunsetBox.classList.remove('hidden');
+                    let warningMsg = '';
+                    if (splits.isAfterSunset && splits.isBeforeSunrise) {
+                        warningMsg = `This expedition starts before sunrise (${formatDecimalHour(splits.sunriseDecimal)}) and ends after sunset (${formatDecimalHour(splits.sunsetDecimal)}). Headlamps, reflective gear, and emergency lighting are mandatory. Inform a contact of your departure/return times.`;
+                    } else if (splits.isAfterSunset) {
+                        warningMsg = `Return time (${formatDecimalHour(splits.timeReturn)}) surpasses sunset at ${formatDecimalHour(splits.sunsetDecimal)}. Bring a headlamp and ensure you have reflective gear. Trail navigation in darkness is significantly harder.`;
+                    } else {
+                        warningMsg = `Departure at ${formatDecimalHour(splits.timeDepart)} is before sunrise (${formatDecimalHour(splits.sunriseDecimal)}). Bring a headlamp for the initial ascent. Trail markers may be difficult to see in pre-dawn conditions.`;
+                    }
+                    printSunsetText.innerText = warningMsg;
+                } else {
+                    printSunsetBox.classList.add('hidden');
+                }
+            }
 
             document.body.setAttribute('data-print-mode', 'single');
             document.getElementById('print-single-hike-layout').setAttribute('data-print-mode', 'single');
@@ -3477,61 +3784,78 @@ ${weatherText}
                                     </span>
                                 </div>
 
-                                <!-- Top-Level Condition Summary Bar -->
-                                <div id="elevation-hud-summary-pill" class="p-3 rounded-xl border font-medium text-xs leading-relaxed transition-all duration-300">
-                                    <p id="elevation-hud-summary-text">Calculating forecast data...</p>
+                                <!-- Weather HUD Data Panel (Visible if forecast available) -->
+                                <div id="weather-hud-data-panel" class="space-y-4">
+                                    <!-- Top-Level Condition Summary Bar -->
+                                    <div id="elevation-hud-summary-pill" class="p-3 rounded-xl border font-medium text-xs leading-relaxed transition-all duration-300">
+                                        <p id="elevation-hud-summary-text">Calculating forecast data...</p>
+                                    </div>
+
+                                    <div id="weather-model-alert"></div>
+
+                                    <!-- Combined Live HUD Metrics Grid -->
+                                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-monokai-deep p-3 rounded-xl border border-monokai-hover text-center font-mono text-xs">
+                                        <div class="border-b sm:border-b-0 border-r border-monokai-hover/40 pb-2 sm:pb-0">
+                                            <span class="block text-[8px] text-monokai-dim uppercase">Active Stage</span>
+                                            <span id="hud-stage" class="text-monokai-text font-bold truncate block mt-0.5">Ascending</span>
+                                        </div>
+                                        <div class="border-b sm:border-b-0 sm:border-r border-monokai-hover/40 pb-2 sm:pb-0">
+                                            <span class="block text-[8px] text-monokai-dim uppercase">Altitude</span>
+                                            <span id="hud-elevation" class="text-monokai-blue font-bold truncate block mt-0.5">--m</span>
+                                        </div>
+                                        <div class="border-r border-monokai-hover/40">
+                                            <span class="block text-[8px] text-monokai-dim uppercase">Lapse Temp</span>
+                                            <span id="hud-temp" class="text-monokai-pink font-bold truncate block mt-0.5">--°C</span>
+                                        </div>
+                                        <div class="border-r border-monokai-hover/40">
+                                            <span class="block text-[8px] text-monokai-yellow font-bold truncate block mt-0.5">Clouds</span>
+                                            <span id="hud-clouds" class="text-monokai-yellow font-bold truncate block mt-0.5">--%</span>
+                                        </div>
+                                        <div>
+                                            <span class="block text-[8px] text-monokai-dim uppercase">Humidity</span>
+                                            <span id="hud-humidity" class="text-monokai-dim font-bold truncate block mt-0.5">--%</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-monokai-deep/50 p-2.5 rounded-xl border border-monokai-hover/50 text-center font-mono text-[11px]">
+                                        <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
+                                            <span class="text-monokai-dim">Wind:</span>
+                                            <span id="hud-wind" class="text-monokai-blue font-semibold">--</span>
+                                        </div>
+                                        <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
+                                            <span class="text-monokai-dim">Gusts:</span>
+                                            <span id="hud-gust" class="text-monokai-blue font-semibold">--</span>
+                                        </div>
+                                        <div class="flex items-center justify-start gap-2 px-2 py-1">
+                                            <span class="text-monokai-dim">Rain Prob:</span>
+                                            <span id="hud-precip" class="text-monokai-purple font-semibold">--</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-monokai-deep/50 p-2.5 rounded-xl border border-monokai-hover/50 text-center font-mono text-[11px]">
+                                        <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
+                                            <span class="text-monokai-dim">UV Index:</span>
+                                            <span id="hud-uv" class="text-monokai-orange font-semibold">--</span>
+                                        </div>
+                                        <div class="flex items-center justify-start gap-2 px-2 py-1">
+                                            <span class="text-monokai-dim">Air Quality (AQI):</span>
+                                            <span id="hud-aqi" class="text-monokai-purple font-semibold">--</span>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                <div id="weather-model-alert"></div>
-
-                                <!-- Combined Live HUD Metrics Grid -->
-                                <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-monokai-deep p-3 rounded-xl border border-monokai-hover text-center font-mono text-xs">
-                                    <div class="border-b sm:border-b-0 border-r border-monokai-hover/40 pb-2 sm:pb-0">
-                                        <span class="block text-[8px] text-monokai-dim uppercase">Active Stage</span>
-                                        <span id="hud-stage" class="text-monokai-text font-bold truncate block mt-0.5">Ascending</span>
+                                <!-- Live Forecast Not Available Fallback Panel -->
+                                <div id="weather-hud-unavailable-panel" class="hidden flex flex-col items-center justify-center p-6 bg-monokai-deep/80 rounded-xl border border-monokai-hover/60 text-center space-y-3 font-mono">
+                                    <div class="p-3 bg-monokai-hover/30 rounded-full border border-monokai-hover">
+                                        <i data-lucide="cloud-off" class="w-8 h-8 text-monokai-orange animate-pulse"></i>
                                     </div>
-                                    <div class="border-b sm:border-b-0 sm:border-r border-monokai-hover/40 pb-2 sm:pb-0">
-                                        <span class="block text-[8px] text-monokai-dim uppercase">Altitude</span>
-                                        <span id="hud-elevation" class="text-monokai-blue font-bold truncate block mt-0.5">--m</span>
-                                    </div>
-                                    <div class="border-r border-monokai-hover/40">
-                                        <span class="block text-[8px] text-monokai-dim uppercase">Lapse Temp</span>
-                                        <span id="hud-temp" class="text-monokai-pink font-bold truncate block mt-0.5">--°C</span>
-                                    </div>
-                                    <div class="border-r border-monokai-hover/40">
-                                        <span class="block text-[8px] text-monokai-yellow font-bold truncate block mt-0.5">Clouds</span>
-                                        <span id="hud-clouds" class="text-monokai-yellow font-bold truncate block mt-0.5">--%</span>
-                                    </div>
-                                    <div>
-                                        <span class="block text-[8px] text-monokai-dim uppercase">Humidity</span>
-                                        <span id="hud-humidity" class="text-monokai-dim font-bold truncate block mt-0.5">--%</span>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-monokai-deep/50 p-2.5 rounded-xl border border-monokai-hover/50 text-center font-mono text-[11px]">
-                                    <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
-                                        <span class="text-monokai-dim">Wind:</span>
-                                        <span id="hud-wind" class="text-monokai-blue font-semibold">--</span>
-                                    </div>
-                                    <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
-                                        <span class="text-monokai-dim">Gusts:</span>
-                                        <span id="hud-gust" class="text-monokai-blue font-semibold">--</span>
-                                    </div>
-                                    <div class="flex items-center justify-start gap-2 px-2 py-1">
-                                        <span class="text-monokai-dim">Rain Prob:</span>
-                                        <span id="hud-precip" class="text-monokai-purple font-semibold">--</span>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-monokai-deep/50 p-2.5 rounded-xl border border-monokai-hover/50 text-center font-mono text-[11px]">
-                                    <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
-                                        <span class="text-monokai-dim">UV Index:</span>
-                                        <span id="hud-uv" class="text-monokai-orange font-semibold">--</span>
-                                    </div>
-                                    <div class="flex items-center justify-start gap-2 px-2 py-1">
-                                        <span class="text-monokai-dim">Air Quality (AQI):</span>
-                                        <span id="hud-aqi" class="text-monokai-purple font-semibold">--</span>
-                                    </div>
+                                    <h5 class="text-sm font-bold text-monokai-orange uppercase tracking-wider">Live Forecast Not Available</h5>
+                                    <p class="text-xs text-monokai-dim max-w-sm leading-relaxed">
+                                        Real-time and GFS model forecasts are only available up to 10 days in advance (Selected date: <span id="weather-unavailable-date" class="text-monokai-yellow font-bold"></span>). 
+                                    </p>
+                                    <p class="text-[10px] text-monokai-blue font-bold">
+                                        Refer to the live Windy.com map below for climate indicators.
+                                    </p>
                                 </div>
 
                                 <!-- Interactive Elevation Track Slider Area -->
@@ -3549,6 +3873,9 @@ ${weatherText}
                                                 <stop offset="100%" stop-color="#ffd866" stop-opacity="0.0"/>
                                             </linearGradient>
                                         </defs>
+
+                                        <!-- Night/Day Shading Background Group -->
+                                        <g id="elevation-night-bg"></g>
 
                                         <!-- Remaining Mountain Path (Muted Cyan Fill) -->
                                         <path id="elevation-fill" d="" fill="url(#elevation-grad)"></path>
