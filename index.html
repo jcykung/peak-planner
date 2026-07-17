@@ -278,6 +278,22 @@
         <!-- Left Sidebar: Filter, Search & Hike Directory -->
         <section id="sidebar-panel"
             class="w-full xl:w-[440px] bg-monokai-deep border-r border-monokai-hover flex flex-col overflow-hidden transition-all duration-300">
+            <!-- Sidebar Mode Toggle (Visible only in Planner mode) -->
+            <div id="sidebar-planner-toggle" class="hidden p-3 bg-monokai-deep border-b border-monokai-hover shrink-0">
+                <div class="flex bg-monokai-card rounded-lg p-0.5 border border-monokai-hover">
+                    <button id="sidebar-toggle-browse" onclick="setSidebarPlannerTab('browse')"
+                        class="flex-1 py-1.5 rounded text-[11px] font-bold transition flex items-center justify-center space-x-1 text-monokai-yellow bg-monokai-active">
+                        <i data-lucide="compass" class="w-3.5 h-3.5"></i>
+                        <span>All Trails</span>
+                    </button>
+                    <button id="sidebar-toggle-wishlist" onclick="setSidebarPlannerTab('wishlist')"
+                        class="flex-1 py-1.5 rounded text-[11px] font-bold transition flex items-center justify-center space-x-1 text-monokai-dim hover:text-monokai-text">
+                        <i data-lucide="heart" class="w-3.5 h-3.5"></i>
+                        <span>My Wishlist</span>
+                    </button>
+                </div>
+            </div>
+
             <!-- Search & Filtering UI Controls -->
             <div class="p-3 md:p-4 border-b border-monokai-hover space-y-3 md:space-y-4 bg-monokai-card/30">
                 <div class="relative">
@@ -381,9 +397,9 @@
 
         <!-- Right Main: Active Hike Presentation, Maps & Planning Engine -->
         <section id="planning-viewport"
-            class="flex-1 min-w-0 flex flex-col overflow-y-auto bg-monokai-bg hidden xl:flex">
+            class="flex-1 min-w-0 flex flex-col bg-monokai-bg hidden xl:flex">
             <!-- Dynamic Active Details UI or Empty State View -->
-            <div id="active-viewport-content" class="flex-1 flex flex-col h-full min-w-0">
+            <div id="active-viewport-content" class="flex-1 flex flex-col h-full min-w-0 overflow-y-auto" onscroll="handleViewportScroll(this)">
                 <!-- Content injected dynamically -->
             </div>
         </section>
@@ -1101,12 +1117,12 @@
                 meetingPoint: "Wooden display board at parking lot exit",
                 instructions: "Follow main fire access path towards the coast. Take Valley trail loop past ancient old-growth Douglas firs to shoreline rocky viewpoints.",
                 img: "https://www.vancouvertrails.com/images/hikes/lighthouse-park.jpg",
-                coords: [49.3316, -123.2636],
+                coords: [49.3359, -123.2581],
                 elevationProfile: [95, 80, 60, 45, 30, 10, 30, 45, 60, 80, 95],
                 routePath: [
-                    [49.3316, -123.2636], [49.3305, -123.2655], [49.3292, -123.2672],
-                    [49.3280, -123.2660], [49.3272, -123.2645], [49.3282, -123.2625],
-                    [49.3298, -123.2612], [49.3310, -123.2622], [49.3316, -123.2636]
+                    [49.3364, -123.2568], [49.3348, -123.2595], [49.3340, -123.2622],
+                    [49.3315, -123.2628], [49.3306, -123.2615], [49.3306, -123.2595],
+                    [49.3315, -123.2560], [49.3338, -123.2568], [49.3364, -123.2568]
                 ],
                 vancouverTrailsUrl: "https://www.vancouvertrails.com/trails/lighthouse-park/",
                 outdoorVancouverUrl: "https://www.outdoorvancouver.ca/lighthouse-park-trail-vancouver/",
@@ -1370,6 +1386,8 @@
                     activeSort = 'distance-asc';
                     document.getElementById('active-sort').value = 'distance-asc';
                 }
+                const togglePanel = document.getElementById('sidebar-planner-toggle');
+                if (togglePanel) togglePanel.classList.add('hidden');
                 renderHikeList();
             } else if (tab === 'wishlist') {
                 wishBtn.className = "flex-1 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center justify-center space-x-1.5 text-monokai-yellow bg-monokai-active relative";
@@ -1378,9 +1396,16 @@
                 document.getElementById('sort-manual-option').classList.remove('hidden');
                 activeSort = 'manual-order';
                 document.getElementById('active-sort').value = 'manual-order';
+                const togglePanel = document.getElementById('sidebar-planner-toggle');
+                if (togglePanel) togglePanel.classList.add('hidden');
                 renderWishlist();
             } else if (tab === 'planner') {
                 planBtn.className = "flex-1 py-2 rounded-lg text-xs md:text-sm font-semibold transition flex items-center justify-center space-x-1.5 text-monokai-yellow bg-monokai-active";
+                const togglePanel = document.getElementById('sidebar-planner-toggle');
+                if (togglePanel) {
+                    togglePanel.classList.remove('hidden');
+                    setSidebarPlannerTab(activeSidebarTab);
+                }
             }
 
             updateLayoutVisibility();
@@ -1411,19 +1436,11 @@
                     }, 200);
                 }
             } else {
-                // Desktop Layout logic
-                if (activeTab === 'planner') {
-                    // Immersive full-screen planner mode (collapses sidebar layout completely)
-                    sidebar.style.setProperty('display', 'none', 'important');
-                    viewport.style.setProperty('display', 'flex', 'important');
-                    viewport.style.width = '100%';
-                } else {
-                    // Classic dual column list + details mode
-                    sidebar.style.setProperty('display', 'flex', 'important');
-                    sidebar.style.width = '440px';
-                    viewport.style.setProperty('display', 'flex', 'important');
-                    viewport.style.width = 'calc(100% - 440px)';
-                }
+                // Desktop Layout logic: always show both columns side-by-side
+                sidebar.style.setProperty('display', 'flex', 'important');
+                sidebar.style.width = '440px';
+                viewport.style.setProperty('display', 'flex', 'important');
+                viewport.style.width = 'calc(100% - 440px)';
 
                 setTimeout(() => {
                     if (leafletMap) {
@@ -1432,6 +1449,45 @@
                     }
                     renderElevationProfile();
                 }, 200);
+            }
+        }
+
+        function setSidebarPlannerTab(tab) {
+            activeSidebarTab = tab;
+
+            const browseToggleBtn = document.getElementById('sidebar-toggle-browse');
+            const wishToggleBtn = document.getElementById('sidebar-toggle-wishlist');
+
+            if (tab === 'browse') {
+                if (browseToggleBtn) browseToggleBtn.className = "flex-1 py-1.5 rounded text-[11px] font-bold transition flex items-center justify-center space-x-1 text-monokai-yellow bg-monokai-active";
+                if (wishToggleBtn) wishToggleBtn.className = "flex-1 py-1.5 rounded text-[11px] font-bold transition flex items-center justify-center space-x-1 text-monokai-dim hover:text-monokai-text";
+                document.getElementById('wishlist-summary-actions').classList.add('hidden');
+                document.getElementById('sort-manual-option').classList.add('hidden');
+                if (activeSort === 'manual-order') {
+                    activeSort = 'distance-asc';
+                    document.getElementById('active-sort').value = 'distance-asc';
+                }
+                renderHikeList();
+            } else {
+                if (wishToggleBtn) wishToggleBtn.className = "flex-1 py-1.5 rounded text-[11px] font-bold transition flex items-center justify-center space-x-1 text-monokai-yellow bg-monokai-active";
+                if (browseToggleBtn) browseToggleBtn.className = "flex-1 py-1.5 rounded text-[11px] font-bold transition flex items-center justify-center space-x-1 text-monokai-dim hover:text-monokai-text";
+                document.getElementById('wishlist-summary-actions').classList.remove('hidden');
+                document.getElementById('sort-manual-option').classList.remove('hidden');
+                activeSort = 'manual-order';
+                document.getElementById('active-sort').value = 'manual-order';
+                renderWishlist();
+            }
+        }
+
+        function handleViewportScroll(el) {
+            const stickyHeader = document.getElementById('sticky-mini-header');
+            if (!stickyHeader) return;
+            if (el.scrollTop > 180) {
+                stickyHeader.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
+                stickyHeader.classList.add('opacity-100', 'pointer-events-auto', 'translate-y-0');
+            } else {
+                stickyHeader.classList.remove('opacity-100', 'pointer-events-auto', 'translate-y-0');
+                stickyHeader.classList.add('opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
             }
         }
 
@@ -2861,6 +2917,21 @@ ${weatherText}
                     </button>
                 </div>
 
+                <!-- Sticky Mini Header (reduces to one line when scrolled) -->
+                <div id="sticky-mini-header" class="sticky top-0 z-30 bg-monokai-deep/95 backdrop-blur border-b border-monokai-hover px-4 py-2.5 flex items-center justify-between transition-all duration-300 opacity-0 pointer-events-none translate-y-[-100%] shadow-lg shrink-0">
+                    <div class="flex items-center space-x-2.5 min-w-0">
+                        <span class="text-[9px] font-mono text-monokai-yellow uppercase border border-monokai-yellow/30 px-1.5 py-0.5 rounded truncate bg-monokai-bg shrink-0">
+                            ${activeHike.region}
+                        </span>
+                        <h3 class="text-xs md:text-sm font-bold text-monokai-text truncate">${activeHike.name}</h3>
+                    </div>
+                    <div class="flex items-center space-x-3 text-[10px] md:text-xs font-semibold font-mono text-monokai-dim shrink-0">
+                        <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-pink">${activeHike.distance}</span>
+                        <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-blue">${activeHike.elevation}m</span>
+                        <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-purple">${activeHike.distFromVan}m drive</span>
+                    </div>
+                </div>
+
                 <!-- Hero Cover with Image and Quick Stats -->
                 <div class="relative h-[220px] md:h-[300px] w-full overflow-hidden shrink-0">
                     <img src="${activeHike.img}" alt="${activeHike.name}"
@@ -2973,7 +3044,7 @@ ${weatherText}
                 </div>
 
                 <!-- Details Layout -->
-                <div class="p-4 md:p-6 overflow-y-auto flex-1 min-w-0">
+                <div class="p-4 md:p-6 flex-1 min-w-0">
                     <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 min-w-0">
                         
                         <!-- Left Column (Params, logistics, route description) -->
