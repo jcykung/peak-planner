@@ -159,8 +159,8 @@
                 display: none !important;
             }
 
-            .print-only[data-print-mode="single"]#print-single-hike-layout,
-            .print-only[data-print-mode="wishlist"]#print-wishlist-layout {
+            body[data-print-mode="single"] #print-single-hike-layout,
+            body[data-print-mode="wishlist"] #print-wishlist-layout {
                 display: block !important;
                 height: auto !important;
                 min-height: auto !important;
@@ -2747,8 +2747,10 @@ ${weatherText}
                             <span class="text-gray-400 text-[10px] ml-1 ${completionClass}">(${hike.region})</span>
                         </div>
                         <div class="flex gap-4 font-mono text-[10px] text-gray-600 ${isCompleted ? 'line-through text-gray-400 opacity-60' : ''}">
+                            <span>Diff: <b>${hike.difficulty}</b></span>
+                            <span>★ <b>${hike.views.toFixed(1)}</b></span>
                             <span>Dist: <b>${hike.distance}</b></span>
-                            <span>Elev: <b>${hike.elevation}m</b></span>
+                            <span>Elevation Gain: <b>${hike.elevation}m</b></span>
                             <span>Time: <b>${hike.duration}h</b></span>
                             <span>Drive: <b>${hike.distFromVan}m</b></span>
                         </div>
