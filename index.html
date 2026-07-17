@@ -3371,7 +3371,7 @@ ${weatherText}
             if (completeBtn) {
                 completeBtn.className = "flex-1 py-2.5 px-3 rounded-xl border font-bold text-xs md:text-sm transition flex items-center justify-center space-x-1.5 " +
                     (isCompleted ? "border-monokai-green bg-monokai-active text-monokai-green" : "border-monokai-hover bg-monokai-card hover:bg-monokai-hover text-monokai-dim hover:text-monokai-text");
-                completeBtn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 ${isCompleted ? 'fill-monokai-green text-monokai-green' : ''}"></i><span>${isCompleted ? 'Completed' : 'Complete'}</span>`;
+                completeBtn.innerHTML = `<i data-lucide="check-circle" class="w-4 h-4 ${isCompleted ? 'text-monokai-green' : ''}"></i><span>${isCompleted ? 'Completed' : 'Complete'}</span>`;
             }
 
             const commentInput = document.getElementById('active-comment-input');
