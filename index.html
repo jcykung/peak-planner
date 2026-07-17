@@ -1538,10 +1538,38 @@
         // --- INITIALIZATION ---
         window.addEventListener('DOMContentLoaded', () => {
             loadWishlistFromLocal();
+            loadSettingsFromLocal();
+
+            // Restore sidebar controls to match loaded state
+            const distSlider = document.getElementById('distance-radius-slider');
+            if (distSlider) {
+                distSlider.value = maxDriveTime;
+                document.getElementById('distance-slider-readout').innerText = maxDriveTime === 180 ? '3 Hours' : `${maxDriveTime} Mins`;
+            }
+            const sortSelect = document.getElementById('active-sort');
+            if (sortSelect && activeSort !== 'manual-order') {
+                sortSelect.value = activeSort;
+            }
+            // Restore difficulty filter button highlights
+            activeDifficultyFilter.forEach(level => {
+                const btn = document.getElementById(`filter-${level.toLowerCase()}`);
+                if (btn) {
+                    btn.className = 'flex-1 py-2 rounded text-[10px] md:text-[11px] font-semibold border border-monokai-yellow text-monokai-yellow bg-monokai-active transition';
+                }
+            });
+
             renderHikeList();
             renderWishlist();
-            switchGlobalTab('browse'); // set unified start state
-            renderActiveHike();
+
+            // Restore the last active tab (and hike if planner was open)
+            const restoredTab = activeTab || 'browse';
+            switchGlobalTab(restoredTab);
+
+            // If a hike was active, re-render the planner detail view
+            if (activeHike) {
+                renderActiveHike();
+            }
+
             lucide.createIcons();
         });
 
@@ -1572,6 +1600,51 @@
             renderHikeList();
             if (activeHike) {
                 updateDetailActionStates();
+            }
+        }
+
+        function loadSettingsFromLocal() {
+            try {
+                const stored = localStorage.getItem('peakplanner_settings');
+                if (stored) {
+                    const settings = JSON.parse(stored);
+                    if (settings.maxDriveTime !== undefined) maxDriveTime = settings.maxDriveTime;
+                    if (settings.activeSort !== undefined) activeSort = settings.activeSort;
+                    if (settings.activeDifficultyFilter !== undefined) activeDifficultyFilter = settings.activeDifficultyFilter;
+                    if (settings.planDate !== undefined) planDate = settings.planDate;
+                    if (settings.planDeparture !== undefined) planDeparture = settings.planDeparture;
+                    if (settings.planLinger !== undefined) planLinger = settings.planLinger;
+                    if (settings.planPace !== undefined) planPace = settings.planPace;
+                    if (settings.windyOverlay !== undefined) windyOverlay = settings.windyOverlay;
+                    if (settings.activeHikeId !== undefined && settings.activeHikeId !== null) {
+                        activeHike = HIKE_DATA.find(h => h.id === settings.activeHikeId) || null;
+                    }
+                    if (settings.activeTab !== undefined) activeTab = settings.activeTab;
+                    if (settings.activePlayheadPercent !== undefined) activePlayheadPercent = settings.activePlayheadPercent;
+                }
+            } catch (e) {
+                console.error("Failed to load settings from LocalStorage", e);
+            }
+        }
+
+        function saveSettings() {
+            const settings = {
+                maxDriveTime,
+                activeSort,
+                activeDifficultyFilter,
+                planDate,
+                planDeparture,
+                planLinger,
+                planPace,
+                windyOverlay,
+                activeHikeId: activeHike ? activeHike.id : null,
+                activeTab,
+                activePlayheadPercent
+            };
+            try {
+                localStorage.setItem('peakplanner_settings', JSON.stringify(settings));
+            } catch (e) {
+                console.error("Failed to save settings to LocalStorage", e);
             }
         }
 
@@ -1620,6 +1693,7 @@
             }
 
             updateLayoutVisibility();
+            saveSettings();
         }
 
         // --- RESPONSIVE LAYOUT ENGINE ---
@@ -2178,6 +2252,7 @@
             } else {
                 renderWishlist();
             }
+            saveSettings();
         }
 
         function handleSort(e) {
@@ -2187,6 +2262,7 @@
             } else {
                 renderWishlist();
             }
+            saveSettings();
         }
 
         function handleDifficultyFilter(level) {
@@ -2204,6 +2280,7 @@
             } else {
                 renderWishlist();
             }
+            saveSettings();
         }
 
         function selectHike(hikeId) {
@@ -2229,6 +2306,7 @@
 
             // Automatically navigate seamlessly to the immersive details Planner view
             switchGlobalTab('planner');
+            saveSettings();
         }
 
         function handleToggleHikeCheckbox(hikeId, event) {
@@ -2354,6 +2432,7 @@
             planDate = e.target.value;
             fetchWeatherForPlan();
             recalculatePlanner();
+            saveSettings();
         }
 
         function handlePlanDepartureChange(e) {
@@ -2363,6 +2442,7 @@
                 readout.innerText = formatDecimalHour(planDeparture);
             }
             recalculatePlanner();
+            saveSettings();
         }
 
         function handlePlanLingerChange(e) {
@@ -2372,6 +2452,7 @@
                 readout.innerText = `${planLinger} Minutes`;
             }
             recalculatePlanner();
+            saveSettings();
         }
 
         function handlePlanPaceChange(pace) {
@@ -2392,6 +2473,7 @@
             }
 
             recalculatePlanner();
+            saveSettings();
         }
 
         function switchWindyLayer(layerId) {
@@ -2410,6 +2492,7 @@
             });
 
             updateWindyIframe();
+            saveSettings();
         }
 
         const getWindyCalendarValue = (dateStr, departureHour) => {
@@ -2773,6 +2856,7 @@
                     isDraggingHiker = false;
                     hikerGroup.style.cursor = 'grab';
                     document.getElementById('hiker-figure').classList.remove('hiker-walking');
+                    saveSettings();
                 }
             };
 
@@ -3541,6 +3625,15 @@ ${weatherText}
                                 <span class="hidden sm:inline">Copy Plan</span>
                                 <span class="sm:hidden">Copy</span>
                             </button>
+                            <a
+                                href="${`https://www.google.com/search?tbm=isch&q=${encodeURIComponent('vancouver hiking ' + activeHike.name)}`}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                class="flex items-center space-x-1 bg-monokai-deep/80 backdrop-blur hover:bg-monokai-hover text-monokai-text border border-monokai-dim/20 px-2.5 py-1.5 rounded-lg text-[10px] md:text-xs transition font-semibold"
+                            >
+                                <i data-lucide="image" class="w-3.5 h-3.5 text-monokai-green"></i>
+                                <span>Views</span>
+                            </a>
                         </div>
                     </div>
                 </div>
