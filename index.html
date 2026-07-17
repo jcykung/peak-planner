@@ -2243,7 +2243,7 @@
             const first = routePath[0];
             const last = routePath[routePath.length - 1];
             const dist = Math.sqrt(Math.pow(last[0] - first[0], 2) + Math.pow(last[1] - first[1], 2));
-            const isClosedRoute = dist < 0.01; // ~1km threshold (covers Stawamus Chief at 0.0053)
+            const isClosedRoute = dist < 0.003; // Natural gap: loops/closed GPX ≤ 0.00115, one-way GPX ≥ 0.00510
 
             let mappedPercent;
             // Loops, one-way trails, and round-trip GPX paths: slider 0-100% maps linearly along the full route.
@@ -3555,26 +3555,26 @@ ${weatherText}
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-monokai-deep/50 p-2.5 rounded-xl border border-monokai-hover/50 text-center font-mono text-[11px]">
-                                    <div class="flex items-center justify-between px-2 py-1 sm:border-r border-monokai-hover/40">
+                                    <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
                                         <span class="text-monokai-dim">Wind:</span>
                                         <span id="hud-wind" class="text-monokai-blue font-semibold">--</span>
                                     </div>
-                                    <div class="flex items-center justify-between px-2 py-1 sm:border-r border-monokai-hover/40">
+                                    <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
                                         <span class="text-monokai-dim">Gusts:</span>
                                         <span id="hud-gust" class="text-monokai-blue font-semibold">--</span>
                                     </div>
-                                    <div class="flex items-center justify-between px-2 py-1">
+                                    <div class="flex items-center justify-start gap-2 px-2 py-1">
                                         <span class="text-monokai-dim">Rain Prob:</span>
                                         <span id="hud-precip" class="text-monokai-purple font-semibold">--</span>
                                     </div>
                                 </div>
 
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-monokai-deep/50 p-2.5 rounded-xl border border-monokai-hover/50 text-center font-mono text-[11px]">
-                                    <div class="flex items-center justify-between px-2 py-1 sm:border-r border-monokai-hover/40">
+                                    <div class="flex items-center justify-start gap-2 px-2 py-1 sm:border-r border-monokai-hover/40">
                                         <span class="text-monokai-dim">UV Index:</span>
                                         <span id="hud-uv" class="text-monokai-orange font-semibold">--</span>
                                     </div>
-                                    <div class="flex items-center justify-between px-2 py-1">
+                                    <div class="flex items-center justify-start gap-2 px-2 py-1">
                                         <span class="text-monokai-dim">Air Quality (AQI):</span>
                                         <span id="hud-aqi" class="text-monokai-purple font-semibold">--</span>
                                     </div>
