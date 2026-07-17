@@ -1695,6 +1695,9 @@
             const heroCover = document.getElementById('hike-hero-cover');
             const heroImg = document.getElementById('hike-hero-img');
             const heroDetails = document.getElementById('hike-hero-details');
+            const coreStatsGrid = document.getElementById('hike-core-stats-grid');
+            const stickyTitle = document.getElementById('sticky-header-title');
+            const stickyStats = document.getElementById('sticky-header-stats');
 
             if (!stickyHeader) return;
 
@@ -1712,8 +1715,14 @@
                 if (heroDetails) {
                     // Fade out and float up
                     heroDetails.style.opacity = `${1 - ratio}`;
-                    heroDetails.style.transform = `translateY(${-ratio * 30}px)`;
+                    heroDetails.style.transform = `translateY(${-ratio * 30}px) scale(${1 - ratio * 0.05})`;
                 }
+            }
+
+            // Shrink and fade the core stats grid as it scrolls
+            if (coreStatsGrid) {
+                coreStatsGrid.style.opacity = `${1 - ratio}`;
+                coreStatsGrid.style.transform = `translateY(${-ratio * 15}px) scale(${1 - ratio * 0.05})`;
             }
 
             // Interpolate sticky mini-header visibility and slide
@@ -1725,10 +1734,36 @@
                 // Add a slideOffset that moves from -15px to 0px as the user scrolls.
                 const slideOffset = (1 - ratio) * -15;
                 stickyHeader.style.transform = `translateY(${scrollTop + slideOffset}px)`;
+
+                // Animation for the sticky header title (shrink and slide from below-left)
+                if (stickyTitle) {
+                    const titleX = (1 - ratio) * -20;
+                    const titleY = (1 - ratio) * 15;
+                    const titleScale = 0.95 + ratio * 0.05;
+                    stickyTitle.style.transform = `translate(${titleX}px, ${titleY}px) scale(${titleScale})`;
+                    stickyTitle.style.opacity = ratio;
+                }
+
+                // Animation for the sticky header stats (shrink and slide from right)
+                if (stickyStats) {
+                    const statsX = (1 - ratio) * 30;
+                    const statsY = (1 - ratio) * 5;
+                    const statsScale = 0.9 + ratio * 0.1;
+                    stickyStats.style.transform = `translate(${statsX}px, ${statsY}px) scale(${statsScale})`;
+                    stickyStats.style.opacity = ratio;
+                }
             } else {
                 stickyHeader.style.opacity = 0;
                 stickyHeader.style.pointerEvents = 'none';
                 stickyHeader.style.transform = 'translateY(-100%)';
+                if (stickyTitle) {
+                    stickyTitle.style.transform = 'none';
+                    stickyTitle.style.opacity = 0;
+                }
+                if (stickyStats) {
+                    stickyStats.style.transform = 'none';
+                    stickyStats.style.opacity = 0;
+                }
             }
         }
 
@@ -3459,16 +3494,16 @@ ${weatherText}
 
                 <!-- Sticky Mini Header (reduces to one line when scrolled) -->
                 <div id="sticky-mini-header" class="absolute top-0 left-0 right-0 z-30 bg-monokai-deep/95 backdrop-blur border-b border-monokai-hover px-4 py-2.5 flex items-center justify-between opacity-0 pointer-events-none shadow-lg shrink-0">
-                    <div class="flex items-center space-x-2.5 min-w-0">
+                    <div id="sticky-header-title" class="flex items-center space-x-2.5 min-w-0">
                         <span class="text-[9px] font-mono text-monokai-yellow uppercase border border-monokai-yellow/30 px-1.5 py-0.5 rounded truncate bg-monokai-bg shrink-0">
                             ${activeHike.region}
                         </span>
                         <h3 class="text-xs md:text-sm font-bold text-monokai-text truncate">${activeHike.name}</h3>
                     </div>
-                    <div class="flex items-center space-x-3 text-[10px] md:text-xs font-semibold font-mono text-monokai-dim shrink-0">
+                    <div id="sticky-header-stats" class="flex items-center space-x-3 text-[10px] md:text-xs font-semibold font-mono text-monokai-dim shrink-0">
                         <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-pink">${activeHike.distance}</span>
-                        <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-blue">${activeHike.elevation}m</span>
                         <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-yellow">${activeHike.duration}h</span>
+                        <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-blue">${activeHike.elevation}m</span>
                         <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-purple">${activeHike.distFromVan}m drive</span>
                     </div>
                 </div>
@@ -3542,7 +3577,7 @@ ${weatherText}
                 </div>
 
                 <!-- Core Stats Grid -->
-                <div class="px-4 py-3 md:px-6 md:py-4 grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4 border-b border-monokai-hover shrink-0">
+                <div id="hike-core-stats-grid" class="px-4 py-3 md:px-6 md:py-4 grid grid-cols-2 sm:grid-cols-4 gap-2 md:gap-4 border-b border-monokai-hover shrink-0">
                     <div class="bg-monokai-card p-2 md:p-4 rounded-xl border border-monokai-hover flex items-center space-x-2 md:space-x-3">
                         <div class="p-1.5 md:p-2 rounded-lg bg-monokai-pink/10 text-monokai-pink">
                             <i data-lucide="activity" class="w-4.5 h-4.5 md:w-5 md:h-5"></i>
