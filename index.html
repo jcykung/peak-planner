@@ -399,7 +399,7 @@
         <section id="planning-viewport"
             class="flex-1 min-w-0 flex flex-col bg-monokai-bg hidden xl:flex">
             <!-- Dynamic Active Details UI or Empty State View -->
-            <div id="active-viewport-content" class="flex-1 flex flex-col h-full min-w-0 overflow-y-auto" onscroll="handleViewportScroll(this)">
+            <div id="active-viewport-content" class="relative flex-1 flex flex-col h-full min-w-0 overflow-y-auto" onscroll="handleViewportScroll(this)">
                 <!-- Content injected dynamically -->
             </div>
         </section>
@@ -1692,13 +1692,43 @@
 
         function handleViewportScroll(el) {
             const stickyHeader = document.getElementById('sticky-mini-header');
+            const heroCover = document.getElementById('hike-hero-cover');
+            const heroImg = document.getElementById('hike-hero-img');
+            const heroDetails = document.getElementById('hike-hero-details');
+
             if (!stickyHeader) return;
-            if (el.scrollTop > 180) {
-                stickyHeader.classList.remove('absolute', 'opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
-                stickyHeader.classList.add('sticky', 'opacity-100', 'pointer-events-auto', 'translate-y-0');
+
+            const scrollTop = el.scrollTop;
+            const maxScroll = 180;
+            const ratio = Math.min(scrollTop / maxScroll, 1);
+
+            // Dynamically interpolate hero effects based on scroll position
+            if (heroCover) {
+                if (heroImg) {
+                    // Parallax: scroll image up at 30% of scroll speed, scale it up slightly, and blur
+                    heroImg.style.transform = `scale(${1 + ratio * 0.08}) translateY(${scrollTop * 0.3}px)`;
+                    heroImg.style.filter = `blur(${ratio * 6}px) brightness(${0.35 - ratio * 0.15})`;
+                }
+                if (heroDetails) {
+                    // Fade out and float up
+                    heroDetails.style.opacity = `${1 - ratio}`;
+                    heroDetails.style.transform = `translateY(${-ratio * 30}px)`;
+                }
+            }
+
+            // Interpolate sticky mini-header visibility and slide
+            if (ratio > 0) {
+                stickyHeader.style.opacity = ratio;
+                stickyHeader.style.pointerEvents = ratio > 0.8 ? 'auto' : 'none';
+                
+                // Position it at the top of the scroll container by translating by scrollTop.
+                // Add a slideOffset that moves from -15px to 0px as the user scrolls.
+                const slideOffset = (1 - ratio) * -15;
+                stickyHeader.style.transform = `translateY(${scrollTop + slideOffset}px)`;
             } else {
-                stickyHeader.classList.remove('sticky', 'opacity-100', 'pointer-events-auto', 'translate-y-0');
-                stickyHeader.classList.add('absolute', 'opacity-0', 'pointer-events-none', 'translate-y-[-100%]');
+                stickyHeader.style.opacity = 0;
+                stickyHeader.style.pointerEvents = 'none';
+                stickyHeader.style.transform = 'translateY(-100%)';
             }
         }
 
@@ -2149,6 +2179,12 @@
 
             const randIndex = Math.floor(Math.random() * HIKING_QUOTES.length);
             currentQuote = HIKING_QUOTES[randIndex];
+
+            // Reset viewport scroll to top
+            const container = document.getElementById('active-viewport-content');
+            if (container) {
+                container.scrollTop = 0;
+            }
 
             // Re-render planner UI with newly loaded hike configuration
             renderActiveHike();
@@ -3422,7 +3458,7 @@ ${weatherText}
                 </div>
 
                 <!-- Sticky Mini Header (reduces to one line when scrolled) -->
-                <div id="sticky-mini-header" class="absolute top-0 left-0 right-0 z-30 bg-monokai-deep/95 backdrop-blur border-b border-monokai-hover px-4 py-2.5 flex items-center justify-between transition-all duration-300 opacity-0 pointer-events-none translate-y-[-100%] shadow-lg shrink-0">
+                <div id="sticky-mini-header" class="absolute top-0 left-0 right-0 z-30 bg-monokai-deep/95 backdrop-blur border-b border-monokai-hover px-4 py-2.5 flex items-center justify-between opacity-0 pointer-events-none shadow-lg shrink-0">
                     <div class="flex items-center space-x-2.5 min-w-0">
                         <span class="text-[9px] font-mono text-monokai-yellow uppercase border border-monokai-yellow/30 px-1.5 py-0.5 rounded truncate bg-monokai-bg shrink-0">
                             ${activeHike.region}
@@ -3432,18 +3468,19 @@ ${weatherText}
                     <div class="flex items-center space-x-3 text-[10px] md:text-xs font-semibold font-mono text-monokai-dim shrink-0">
                         <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-pink">${activeHike.distance}</span>
                         <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-blue">${activeHike.elevation}m</span>
+                        <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-yellow">${activeHike.duration}h</span>
                         <span class="bg-monokai-card px-2 py-0.5 rounded border border-monokai-hover text-monokai-purple">${activeHike.distFromVan}m drive</span>
                     </div>
                 </div>
 
                 <!-- Hero Cover with Image and Quick Stats -->
-                <div class="relative h-[220px] md:h-[300px] w-full overflow-hidden shrink-0">
-                    <img src="${activeHike.img}" alt="${activeHike.name}"
-                        class="w-full h-full object-cover brightness-[0.35] transition-all duration-700 scale-100"
+                <div id="hike-hero-cover" class="relative h-[220px] md:h-[300px] w-full overflow-hidden shrink-0">
+                    <img id="hike-hero-img" src="${activeHike.img}" alt="${activeHike.name}"
+                        class="w-full h-full object-cover brightness-[0.35] scale-100"
                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=1200&q=80'"
                     />
                     <div class="absolute inset-0 bg-gradient-to-t from-monokai-bg via-transparent to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 flex flex-col md:flex-row md:items-end justify-between gap-3">
+                    <div id="hike-hero-details" class="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 flex flex-col md:flex-row md:items-end justify-between gap-3">
                         <div class="min-w-0">
                             <span class="text-[10px] font-mono tracking-wider text-monokai-yellow uppercase bg-monokai-deep/80 px-2 py-0.5 rounded border border-monokai-yellow/30">
                                 ${activeHike.region}
