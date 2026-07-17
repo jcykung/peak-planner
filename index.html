@@ -1798,6 +1798,29 @@
             e.preventDefault();
         }
 
+        function handleDrop(targetId) {
+            if (!draggedId || draggedId === targetId) return;
+
+            const items = getSortedWishlistItems();
+            const sourceIdx = items.findIndex(h => h.id === draggedId);
+            const targetIdx = items.findIndex(h => h.id === targetId);
+
+            if (sourceIdx === -1 || targetIdx === -1) return;
+
+            const [draggedItem] = items.splice(sourceIdx, 1);
+            items.splice(targetIdx, 0, draggedItem);
+
+            const updated = { ...wishlist };
+            items.forEach((item, idx) => {
+                updated[item.id] = {
+                    ...(updated[item.id] || {}),
+                    order: idx
+                };
+            });
+
+            saveWishlist(updated);
+        }
+
         // --- PLANNER INPUT EVENT HANDLERS ---
         function handlePlanDateChange(e) {
             planDate = e.target.value;
@@ -2463,6 +2486,37 @@ ${weatherText}
             setTimeout(() => {
                 window.print();
             }, 50);
+        }
+
+        // --- TOAST HELPER ---
+        function showToast(msg, isError = false) {
+            const toastEl = document.getElementById('toast');
+            if (!toastEl) return;
+            toastEl.innerText = msg;
+
+            if (isError) {
+                toastEl.className = "fixed bottom-4 right-4 z-50 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg transition-all duration-300 transform translate-y-0 opacity-100 bg-monokai-pink text-monokai-deep";
+            } else {
+                toastEl.className = "fixed bottom-4 right-4 z-50 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg transition-all duration-300 transform translate-y-0 opacity-100 bg-monokai-green text-monokai-deep";
+            }
+
+            setTimeout(() => {
+                toastEl.className = "fixed bottom-4 right-4 z-50 px-4 py-2 rounded-xl text-xs font-semibold shadow-lg transition-all duration-300 transform translate-y-20 opacity-0 bg-monokai-green text-monokai-deep pointer-events-none";
+            }, 2500);
+        }
+
+        // --- RATING STARS RENDERER ---
+        function renderRatingStars(rating) {
+            const filled = Math.floor(rating);
+            const hasHalf = rating % 1 !== 0;
+            let starsHtml = "";
+            for (let i = 0; i < filled; i++) {
+                starsHtml += `<i data-lucide="star" class="w-4 h-4 fill-monokai-yellow stroke-none"></i>`;
+            }
+            if (hasHalf) {
+                starsHtml += `<i data-lucide="star-half" class="w-4 h-4 fill-monokai-yellow text-monokai-yellow"></i>`;
+            }
+            return starsHtml;
         }
 
         // --- DOM RENDERERS ---
